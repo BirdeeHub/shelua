@@ -38,15 +38,16 @@
     local builder = os.getenv("luaBuilderPath")
     if os.readable(builder) then
       local ok, err = pcall(dofile, builder)
+      sh.rm("-rf", temp)
       assert(ok, err)
     else
       local ok, ret = pcall((loadstring or load), os.getenv("luaBuilder"))
       if ok and ret then
         ok, ret = pcall(ret)
+        sh.rm("-rf", temp)
         assert(ok, ret)
       end
     end
-    sh.rm("-rf", temp)
   '';
   initlua = builtins.concatStringsSep ";" [
     ''_G.out = "${placeholder "out"}"''
