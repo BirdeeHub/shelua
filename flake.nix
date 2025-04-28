@@ -8,7 +8,7 @@
       shelua = prev.callPackage ./. {
         lua_interpreter = prev.lua5_2;
       };
-      runCommandLua =  import ./runCommandLua.nix { inherit (prev) runCommandNoCC; };
+      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
     };
     overlay1 = final: prev: {
       shelua = prev.callPackage ./. {
@@ -16,7 +16,7 @@
       };
     };
     overlay2 = final: prev: {
-      runCommandLua =  import ./runCommandLua.nix { inherit (prev) runCommandNoCC; };
+      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
     };
   in {
     overlays.default = overlay;
