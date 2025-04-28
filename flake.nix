@@ -7,18 +7,18 @@
     forAllSys = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
     overlay = final: prev: {
       shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
-      runCommandLua =  prev.callPackage ./runCommandLua.nix { inherit n2l; };
+      runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
     };
     overlay1 = final: prev: {
       shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
     };
     overlay2 = final: prev: {
-      runCommandLua =  prev.callPackage ./runCommandLua.nix { inherit n2l; };
+      runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
     };
   in {
     overlays.default = overlay;
     overlays.shelua = overlay1;
-    overlays.runCommandLua = overlay2;
+    overlays.runLuaCommand = overlay2;
     packages = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
@@ -26,12 +26,12 @@
       builtins.listToAttrs
     ] // {
       default = pkgs.shelua;
-      inherit (pkgs) runCommandLua;
+      inherit (pkgs) runLuaCommand;
     });
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in {
-      default = pkgs.runCommandLua "testpkg" (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter {
+      default = pkgs.runLuaCommand "testpkg" (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter {
         nativeBuildInputs = [ pkgs.makeWrapper ];
       } /*lua*/''
         local inspect = require('inspect')
