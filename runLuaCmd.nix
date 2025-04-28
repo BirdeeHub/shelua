@@ -1,5 +1,5 @@
 { runCommandNoCC, ... }: name: lua: env: text: let
-  luaentrypoint = builtins.toFile "luastdenv" /*lua*/ ''
+  luaentrypoint = /*lua*/ ''
     _G.sh = require("sh")
     function os.write_file(opts, filename, content)
       local file = assert(io.open(filename, opts.append and "a" or "w"))
@@ -36,7 +36,7 @@
   '';
   initlua = builtins.concatStringsSep ";" [
     ''package.preload.sh = function() return dofile("${./sh.lua}") end''
-    ''local ok, err = pcall(dofile, "${luaentrypoint}")''
+    ''local ok, err = pcall(dofile, "${builtins.toFile "luastdenv" luaentrypoint}")''
     ''assert(ok, err)''
   ];
 in (runCommandNoCC name env ''echo "_G.out = [[$out]];" '${initlua}' | exec ${lua.interpreter} -'').overrideAttrs {
