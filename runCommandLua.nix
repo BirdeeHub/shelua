@@ -1,4 +1,4 @@
-{ runCommand, ... }: name: interpreter: env: text: let
+{ lib, runCommand, n2l, ... }: name: interpreter: env: text: let
   luaentrypoint = /*lua*/ ''
     _G.sh = require("sh")
     function os.write_file(opts, filename, content)
@@ -35,11 +35,13 @@
     end
   '';
   initlua = builtins.concatStringsSep ";" [
+    ''_G.out = "${placeholder "out"}"''
     ''package.preload.sh = function() return dofile("${./sh.lua}") end''
     ''local ok, err = pcall(dofile, "${builtins.toFile "luastdenv" luaentrypoint}")''
     ''assert(ok, err)''
   ];
-in runCommand name (env // {
-  passAsFile = [ "luaBuilder" ] ++ env.passAsFile or [];
-  luaBuilder = text;
-}) ''echo "_G.out = [[$out]];" '${initlua}' | exec ${interpreter} -''
+  fenv = (if lib.isFunction env then env n2l else env);
+in runCommand name (fenv // {
+  passAsFile = [ "luaBuilder" ] ++ fenv.passAsFile or [];
+  luaBuilder = "package.preload.drv = function() return ${n2l.toLua fenv} end;" + text;
+}) ''echo '${initlua}' | exec ${interpreter} -''

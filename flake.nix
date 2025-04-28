@@ -1,18 +1,19 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    n2l.url = "github:BirdeeHub/nixToLua";
   };
-  outputs = { nixpkgs, ... }: let
+  outputs = { nixpkgs, n2l, ... }: let
     forAllSys = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
     overlay = final: prev: {
       shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
-      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
+      runCommandLua =  prev.callPackage ./runCommandLua.nix { inherit n2l; };
     };
     overlay1 = final: prev: {
       shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
     };
     overlay2 = final: prev: {
-      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
+      runCommandLua =  prev.callPackage ./runCommandLua.nix { inherit n2l; };
     };
   in {
     overlays.default = overlay;
