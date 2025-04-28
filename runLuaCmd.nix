@@ -24,13 +24,13 @@
     end
     local builder = os.getenv("luaBuilderPath")
     if os.readable(builder) then
-      ok, err = pcall(dofile, builder)
+      local ok, err = pcall(dofile, builder)
       assert(ok, err)
     else
-      local ok, val = pcall((loadstring or load), os.getenv("luaBuilder"))
-      if ok and val then
-        ok, err = pcall(val)
-        assert(ok, err)
+      local ok, ret = pcall((loadstring or load), os.getenv("luaBuilder"))
+      if ok and ret then
+        ok, ret = pcall(ret)
+        assert(ok, ret)
       end
     end
   '';
