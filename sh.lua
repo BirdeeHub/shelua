@@ -1,17 +1,80 @@
 local M = {}
 
+local is_pre_5_2 = (function()
+	local majorversion, minorversion = _VERSION:match("Lua (%d+).(%d+)")
+	majorversion = tonumber(majorversion)
+	if majorversion < 6 then
+		if majorversion == 5 and tonumber(minorversion) < 2 then
+			return true
+		end
+	end
+	return false
+end)()
+
+local function pre_5_2_sh(tmp, cmd, input)
+	if input then
+		local f = io.open(tmp, 'w')
+		if f then
+			f:write(input)
+			f:close()
+			cmd = cmd .. ' <' .. tmp
+		end
+	end
+	local p = io.popen(cmd .. "; echo __EXITCODE__$?;", 'r')
+	local output
+	if p then
+		output = p:read('*a')
+		p:close()
+	end
+	os.remove(tmp)
+	local exit
+	output = (output or ""):gsub("__EXITCODE__(%d*)\n?$", function(code)
+		exit = tonumber(code)
+		return ""
+	end)
+	return {
+		__input = output,
+		__exitcode = exit or 127,
+		__signal = (exit and exit > 128) and (exit - 128) or 0
+	}
+end
+
+local function post_5_2_sh(tmp, cmd, input)
+	if input then
+		local f = io.open(tmp, 'w')
+		if f then
+			f:write(input)
+			f:close()
+			cmd = cmd .. ' <' .. tmp
+		end
+	end
+	local p = io.popen(cmd, 'r')
+	local output, exit, status
+	if p then
+		output = p:read('*a')
+		_, exit, status = p:close()
+	end
+	os.remove(tmp)
+
+	return {
+		__input = output,
+		__exitcode = exit == 'exit' and status or 127,
+		__signal = exit == 'signal' and status or 0,
+	}
+end
+
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
 	if not a then return k end
-	if type(a) == 'string' and #a > 0 then return k..'=\''..a..'\'' end
-	if type(a) == 'number' then return k..'='..tostring(a) end
+	if type(a) == 'string' and #a > 0 then return k .. '=\'' .. a .. '\'' end
+	if type(a) == 'number' then return k .. '=' .. tostring(a) end
 	if type(a) == 'boolean' and a == true then return k end
-	error('invalid argument type', type(a), a)
+	error("invalid argument type: '" .. type(a) .. "' of value: '" .. a .. "'")
 end
 
 -- converts nested tables into a flat list of arguments and concatenated input
-local function flatten(t)
-	local result = {args = {}, input = ''}
+local function flatten(input)
+	local result = { args = {} }
 
 	local function f(t)
 		local keys = {}
@@ -26,52 +89,41 @@ local function flatten(t)
 		end
 		for k, v in pairs(t) do
 			if k == '__input' then
-				result.input = result.input .. v
+				result.input = (result.input and result.input or "") .. v
 			elseif not keys[k] and k:sub(1, 1) ~= '_' then
-				local key = '-'..k
-				if #k > 1 then key = '-' ..key end
+				local key = '-' .. k
+				if #k > 1 then key = '-' .. key end
 				table.insert(result.args, arg(key, v))
 			end
 		end
 	end
 
-	f(t)
+	f(input)
 	return result
 end
 
 -- returns a function that executes the command with given args and returns its
 -- output, exit status etc
 local function command(cmd, ...)
-	local prearg = {...}
+	local prearg = { ... }
 	return function(...)
-		local args = flatten({...})
+		local args = flatten({ ... })
 		local s = cmd
 		for _, v in ipairs(prearg) do
 			s = s .. ' ' .. v
 		end
-		for k, v in pairs(args.args) do
+		for _, v in pairs(args.args) do
 			s = s .. ' ' .. v
 		end
-
-		if args.input then
-			local f = io.open(M.tmpfile, 'w')
-			f:write(args.input)
-			f:close()
-			s = s .. ' <'..M.tmpfile
+		local t
+		if is_pre_5_2 then
+			t = pre_5_2_sh(M.luash_tmpfile, s, args.input)
+		else
+			t = post_5_2_sh(M.luash_tmpfile, s, args.input)
 		end
-		local p = io.popen(s, 'r')
-		local output = p:read('*a')
-		local _, exit, status = p:close()
-		os.remove(M.tmpfile)
-
-		local t = {
-			__input = output,
-			__exitcode = exit == 'exit' and status or 127,
-			__signal = exit == 'signal' and status or 0,
-		}
 		local mt = {
 			__index = function(self, k, ...)
-				return _G[k] --, ...
+				return M[k] --, ...
 			end,
 			__tostring = function(self)
 				-- return trimmed command output as a string
@@ -82,27 +134,16 @@ local function command(cmd, ...)
 	end
 end
 
--- get global metatable
-local mt = getmetatable(_G)
-if mt == nil then
-  mt = {}
-  setmetatable(_G, mt)
-end
-
--- set hook for undefined variables
-mt.__index = function(t, cmd)
-	return command(cmd)
-end
-
 -- export command() function and configurable temporary "input" file
-M.command = command
-M.tmpfile = '/tmp/shluainput'
+M.luash_tmpfile = '/tmp/shluainput'
 
--- allow to call sh to run shell commands
-setmetatable(M, {
+return setmetatable(M, {
+	-- set hook for undefined variables
+	__index = function(_, cmd)
+		return command(cmd)
+	end,
+	-- allow to call sh to run shell commands
 	__call = function(_, cmd, ...)
 		return command(cmd, ...)
-	end
+	end,
 })
-
-return M

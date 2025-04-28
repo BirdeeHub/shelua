@@ -1,30 +1,30 @@
 local sh = require('sh')
 
 -- any shell command can be called as a function
-print('User:', whoami())
-print('Current directory:', pwd())
+print('User:', sh.whoami())
+print('Current directory:', sh.pwd())
 
 -- commands can be grouped into the pipeline as nested functions
-print('Files in /bin:', wc(ls('/bin'), '-l'))
-print('Files in /usr/bin:', wc(ls('/usr/bin'), '-l'))
-print('files in both /usr/bin and /bin:', wc(ls('/usr/bin'), ls('/bin'), '-l'))
+print('Files in /bin:', sh.wc(sh.ls('/bin'), '-l'))
+print('Files in /usr/bin:', sh.wc(sh.ls('/usr/bin'), '-l'))
+print('files in both /usr/bin and /bin:', sh.wc(sh.ls('/usr/bin'), sh.ls('/bin'), '-l'))
 
 -- commands can be chained as in unix shell pipeline
-print(ls('/bin'):wc("-l"))
+print(sh.ls('/bin'):wc("-l"))
 -- Lua allows to omit parens
-ls '/bin' : wc '-l' : print()
+print(sh.ls '/bin' : wc '-l')
 
 -- intermediate output in the pipeline can be stored into variables
-local sedecho = sed(echo('hello', 'world'), 's/world/Lua/g')
+local sedecho = sh.sed(sh.echo('hello', 'world'), 's/world/Lua/g')
 print('output:', sedecho)
 print('exit code:', sedecho.__exitcode)
-local res = tr(sedecho, '[[:lower:]]', '[[:upper:]]')
+local res = sh.tr(sedecho, '[[:lower:]]', '[[:upper:]]')
 print('output+tr:', res)
 
 -- command functions can be created dynamically. Optionally, some arguments
 -- can be prepended (like partially applied functions)
-local e = sh.command('echo')
-local greet = sh.command('echo', 'hello')
+local e = sh('echo')
+local greet = sh('echo', 'hello')
 print(e('this', 'is', 'some', 'output'))
 print(greet('world'))
 print(greet('foo'))
@@ -32,5 +32,5 @@ print(greet('foo'))
 -- sh module itself can be called as a function
 -- it's an alias for sh.command()
 print(sh('type')('ls'))
-sh 'type' 'ls' : print()
+print(sh 'type' 'ls')
 
