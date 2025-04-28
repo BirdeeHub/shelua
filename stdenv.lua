@@ -22,11 +22,11 @@ return function(tempdir)
     return false
   end
   function string.escapeShellArg(arg)
-    local string = tostring(arg)
-    if string:match("^[%w,._+:@%%/-]+$") == nil then
-      return string.format("'%s'", string:gsub("'", "'\\''"))
+    local str = tostring(arg)
+    if str:match("^[%w,._+:@%%/-]+$") == nil then
+      return str.format("'%s'", str:gsub("'", "'\\''"))
     else
-      return string
+      return str
     end
   end
   local shell = os.getenv("SHELL")
