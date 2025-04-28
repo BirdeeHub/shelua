@@ -117,9 +117,9 @@ local function command(cmd, ...)
 		end
 		local t
 		if is_pre_5_2 then
-			t = pre_5_2_sh(M.luash_tmpfile, s, args.input)
+			t = pre_5_2_sh(M.shelua_tmpfile, s, args.input)
 		else
-			t = post_5_2_sh(M.luash_tmpfile, s, args.input)
+			t = post_5_2_sh(M.shelua_tmpfile, s, args.input)
 		end
 		local mt = {
 			__index = function(self, k, ...)
@@ -135,7 +135,7 @@ local function command(cmd, ...)
 end
 
 -- export command() function and configurable temporary "input" file
-M.luash_tmpfile = '/tmp/shluainput'
+M.shelua_tmpfile = '/tmp/sheluainput'
 
 return setmetatable(M, {
 	-- set hook for undefined variables
