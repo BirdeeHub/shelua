@@ -5,15 +5,11 @@
   outputs = { nixpkgs, ... }: let
     forAllSys = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
     overlay = final: prev: {
-      shelua = prev.callPackage ./. {
-        lua_interpreter = prev.lua5_2;
-      };
+      shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
       runCommandLua =  prev.callPackage ./runCommandLua.nix {};
     };
     overlay1 = final: prev: {
-      shelua = prev.callPackage ./. {
-        lua_interpreter = prev.lua5_2;
-      };
+      shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
     };
     overlay2 = final: prev: {
       runCommandLua =  prev.callPackage ./runCommandLua.nix {};
