@@ -1,4 +1,4 @@
-{ runCommandNoCC, ... }: name: lua: env: text: let
+{ runCommandNoCC, ... }: name: interpreter: env: text: let
   luaentrypoint = /*lua*/ ''
     _G.sh = require("sh")
     function os.write_file(opts, filename, content)
@@ -39,7 +39,7 @@
     ''local ok, err = pcall(dofile, "${builtins.toFile "luastdenv" luaentrypoint}")''
     ''assert(ok, err)''
   ];
-in (runCommandNoCC name env ''echo "_G.out = [[$out]];" '${initlua}' | exec ${lua.interpreter} -'').overrideAttrs {
+in (runCommandNoCC name env ''echo "_G.out = [[$out]];" '${initlua}' | exec ${interpreter} -'').overrideAttrs {
   passAsFile = [ "luaBuilder" ];
   luaBuilder = text;
 }

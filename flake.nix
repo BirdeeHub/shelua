@@ -24,7 +24,7 @@
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in {
-      default = pkgs.runLuaCmd "testpkg" pkgs.lua5_2 {} /*lua*/''
+      default = pkgs.runLuaCmd "testpkg" pkgs.lua5_2.interpreter {} /*lua*/''
         local outbin = out .. "/bin"
         local outfile = outbin .. "/testpkg"
         sh.mkdir("-p", outbin)
