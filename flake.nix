@@ -8,6 +8,7 @@
       shelua = prev.callPackage ./. {
         lua_interpreter = prev.lua5_2;
       };
+      runLuaCmd =  prev.callPackage ./runLuaCmd.nix {};
     };
   in {
     overlays.default = overlay;
@@ -16,6 +17,9 @@
     in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
       (builtins.map (li: { name = "she" + li.luaAttr; value = pkgs.shelua.override { lua_interpreter = li; }; }))
       builtins.listToAttrs
-    ] // { default = pkgs.shelua; });
+    ] // {
+      default = pkgs.shelua;
+      inherit (pkgs) runLuaCmd;
+    });
   };
 }
