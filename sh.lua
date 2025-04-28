@@ -63,12 +63,22 @@ local function post_5_2_sh(tmp, cmd, input)
 	}
 end
 
+local function escapeShellArg(arg)
+  local string = tostring(arg)
+  -- Match against the regular expression for valid shell arguments
+  if string:match("^[%w,._+:@%%/-]+$") == nil then
+    -- Escape single quotes by replacing with '\\''
+    return string.format("'%s'", string:gsub("'", "'\\''"))
+  else
+    return string
+  end
+end
+
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
-	if not a then return k end
-	if type(a) == 'string' and #a > 0 then return k .. '=\'' .. a .. '\'' end
+	if type(a) == 'boolean' or not k then return k end
+	if type(a) == 'string' and #a > 0 then return k .. "=" .. escapeShellArg(a) end
 	if type(a) == 'number' then return k .. '=' .. tostring(a) end
-	if type(a) == 'boolean' and a == true then return k end
 	error("invalid argument type: '" .. type(a) .. "' of value: '" .. a .. "'")
 end
 
