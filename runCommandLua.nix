@@ -43,5 +43,5 @@
   fenv = (if lib.isFunction env then env n2l else env);
 in runCommand name (fenv // {
   passAsFile = [ "luaBuilder" ] ++ fenv.passAsFile or [];
-  luaBuilder = "package.preload.drv = function() return ${n2l.toLua fenv} end;" + text;
+  luaBuilder = "package.preload.drv = function() return ${n2l.toLua fenv} end; _G.drv = require([[drv]]);" + text;
 }) ''echo '${initlua}' | exec ${interpreter} -''
