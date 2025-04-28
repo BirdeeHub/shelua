@@ -31,12 +31,21 @@
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in {
-      default = pkgs.runCommandLua "testpkg" pkgs.lua5_2.interpreter {} /*lua*/''
+      default = pkgs.runCommandLua "testpkg" (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter {
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+      } /*lua*/''
+        local inspect = require('inspect')
         local outbin = out .. "/bin"
         local outfile = outbin .. "/testpkg"
+        local outdrv = outbin .. "/testdrv"
+        local outcat = outbin .. "/newcat"
         sh.mkdir("-p", outbin)
-        os.write_file({ newline = true, }, outfile, [[#!${pkgs.bash}/bin/bash]])
+        os.write_file({}, outfile, [[#!${pkgs.bash}/bin/bash]])
         os.write_file({ append = true, }, outfile, [[echo "hello world!"]])
+        os.write_file({ append = true, }, outfile, [[cat ]] .. outdrv)
+        os.write_file({ append = true, }, outfile, outcat)
+        os.write_file({}, outdrv, inspect(drv))
+        sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outfile)
         sh.chmod("+x", outfile)
       '';
     });
