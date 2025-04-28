@@ -21,5 +21,17 @@
       default = pkgs.shelua;
       inherit (pkgs) runLuaCmd;
     });
+    checks = forAllSys (system: let
+      pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
+    in {
+      default = pkgs.runLuaCmd "testpkg" pkgs.lua5_2 {} /*lua*/''
+        local outbin = out .. "/bin"
+        local outfile = outbin .. "/testpkg"
+        sh.mkdir("-p", outbin)
+        os.write_file({ newline = true, }, outfile, [[#!${pkgs.bash}/bin/bash]])
+        os.write_file({ append = true, }, outfile, [[echo "hello world!"]])
+        sh.chmod("+x", outfile)
+      '';
+    });
   };
 }

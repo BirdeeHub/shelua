@@ -2,32 +2,36 @@
   luaentrypoint = builtins.toFile "luastdenv" /*lua*/ ''
     _G.sh = require("sh")
     function os.write_file(opts, filename, content)
-        local file = assert(io.open(filename, opts.append and "a" or "w"))
-        file:write(content .. (opts.newline and "\n" or ""))
-        file:close()
+      local file = assert(io.open(filename, opts.append and "a" or "w"))
+      file:write(content .. (opts.newline and "\n" or ""))
+      file:close()
     end
     function os.read_file(filename)
-        local file = assert(io.open(filename, "r"))
-        local content = file:read("*a")
-        file:close()
-        return content
+      local file = assert(io.open(filename, "r"))
+      local content = file:read("*a")
+      file:close()
+      return content
     end
     function os.readable(filename)
+      if filename then
         local file = io.open(filename, "r")  -- Try to open the file in read mode
         if file then
-            file:close()  -- Close the file if it exists
-            return true
-        else
-            return false
+          file:close()  -- Close the file if it exists
+          return true
         end
+      end
+      return false
     end
     local builder = os.getenv("luaBuilderPath")
     if os.readable(builder) then
       ok, err = pcall(dofile, builder)
       assert(ok, err)
     else
-      ok, err = pcall(loadstring, os.getenv("luaBuilder"))
-      assert(ok, err)
+      local ok, val = pcall((loadstring or load), os.getenv("luaBuilder"))
+      if ok and val then
+        ok, err = pcall(val)
+        assert(ok, err)
+      end
     end
   '';
   initlua = builtins.concatStringsSep ";" [
