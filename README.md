@@ -6,26 +6,19 @@ Tiny library for shell scripting with Lua (inspired by Python's sh module).
 
 ## Install
 
-Via luarocks:
-
-```
-luarocks install --server=http://luarocks.org/dev luash 
-
-```
-
-Or just clone this repo and copy sh.lua into your project.
+currently just clone this repo and copy sh.lua into your project.
 
 ## Simple usage
 
-Every command that can be called via os.execute can be used a global function.
+Every command that can be called via os.execute can be called via the sh table.
 All the arguments passed into the function become command arguments.
 
 ``` lua
-require('sh')
+local sh = require('sh')
 
-local wd = tostring(pwd()) -- calls `pwd` and returns its output as a string
+local wd = tostring(sh.pwd()) -- calls `pwd` and returns its output as a string
 
-local files = tostring(ls('/tmp')) -- calls `ls /tmp`
+local files = tostring(sh.ls('/tmp')) -- calls `ls /tmp`
 for f in string.gmatch(files, "[^\n]+") do
 	print(f)
 end
@@ -48,7 +41,7 @@ read, the the outer command is execute with the output redirected etc.
 require('sh')
 
 local words = 'foo\nbar\nfoo\nbaz\n'
-local u = uniq(sort({__input = words})) -- like $(echo ... | sort | uniq)
+local u = sh.uniq(sh.sort({__input = words})) -- like $(echo ... | sort | uniq)
 print(u) -- prints "bar", "baz", "foo"
 ```
 
@@ -58,25 +51,25 @@ Pipelines can be also written as chained function calls. Lua allows to omit pare
 -- $ ls /bin | grep $filter | wc -l
 
 -- normal syntax
-wc(grep(ls('/bin'), filter), '-l')
+sh.wc(sh.grep(sh.ls('/bin'), filter), '-l')
 -- chained syntax
-ls('/bin'):grep(filter):wc('-l')
+sh.ls('/bin'):grep(filter):wc('-l')
 -- chained syntax without parens
-ls '/bin' : grep filter : wc '-l'
+sh.ls '/bin' : grep filter : wc '-l'
 ```
 
 ## Partial commands and commands with tricky names
 
-You can use `sh.command` to construct a command function, optionally
+You can use `sh` as a function to construct a command function, optionally
 pre-setting the arguments:
 
 ``` lua
 local sh = require('sh')
 
-local truecmd = sh.command('true') -- because "true" is a Lua keyword
-local chrome = sh.command('google-chrome') -- because '-' is an operator
+local truecmd = sh('true') -- because "true" is a Lua keyword
+local chrome = sh('google-chrome') -- because '-' is an operator
 
-local gittag = sh.command('git', 'tag') -- gittag(...) is same as git('tag', ...)
+local gittag = sh('git', 'tag') -- gittag(...) is same as git('tag', ...)
 
 gittag('-l') -- list all git tags
 ```
