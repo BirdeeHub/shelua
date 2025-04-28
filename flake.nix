@@ -8,10 +8,20 @@
       shelua = prev.callPackage ./. {
         lua_interpreter = prev.lua5_2;
       };
-      runLuaCmd =  prev.callPackage ./runLuaCmd.nix {};
+      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
+    };
+    overlay1 = final: prev: {
+      shelua = prev.callPackage ./. {
+        lua_interpreter = prev.lua5_2;
+      };
+    };
+    overlay2 = final: prev: {
+      runCommandLua =  prev.callPackage ./runCommandLua.nix {};
     };
   in {
     overlays.default = overlay;
+    overlays.shelua = overlay1;
+    overlays.runCommandLua = overlay2;
     packages = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
@@ -19,12 +29,12 @@
       builtins.listToAttrs
     ] // {
       default = pkgs.shelua;
-      inherit (pkgs) runLuaCmd;
+      inherit (pkgs) runCommandLua;
     });
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in {
-      default = pkgs.runLuaCmd "testpkg" pkgs.lua5_2.interpreter {} /*lua*/''
+      default = pkgs.runCommandLua "testpkg" pkgs.lua5_2.interpreter {} /*lua*/''
         local outbin = out .. "/bin"
         local outfile = outbin .. "/testpkg"
         sh.mkdir("-p", outbin)
