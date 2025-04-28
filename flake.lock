@@ -2,11 +2,11 @@
   "nodes": {
     "n2l": {
       "locked": {
-        "lastModified": 1745841364,
-        "narHash": "sha256-g5+L5Fkl7/XELtpRLVH/8qTLdK0qrKNw7XU3byNl2Lg=",
+        "lastModified": 1745877165,
+        "narHash": "sha256-NUEGGrjhtlv0AadpryHUtPkeeLrC0aILTK6xoaczIvA=",
         "owner": "BirdeeHub",
         "repo": "nixToLua",
-        "rev": "fc11212abfca2ca8ac2e9d478ae45f6b13e0a1cc",
+        "rev": "df0acaffd0a7db362b76bd0c28c08960ce271b02",
         "type": "github"
       },
       "original": {
