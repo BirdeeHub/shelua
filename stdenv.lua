@@ -45,15 +45,15 @@ return function(tempdir)
   local builder = os.getenv("luaBuilderPath")
   if os.readable(builder) then
     local ok, err = pcall(dofile, builder)
-    sh.rm("-rf", tempdir)
     sh.rm("-rf", temp)
+    sh.rm("-rf", tempdir)
     assert(ok, err)
   else
     local ok, ret = pcall((loadstring or load), os.getenv("luaBuilder"))
     if ok and ret then
       ok, ret = pcall(ret)
-      sh.rm("-rf", tempdir)
       sh.rm("-rf", temp)
+      sh.rm("-rf", tempdir)
       assert(ok, ret)
     end
   end
