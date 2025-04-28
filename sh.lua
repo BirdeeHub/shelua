@@ -1,14 +1,9 @@
 local M = {}
 
-local is_pre_5_2 = (function()
-	local majorversion, minorversion = _VERSION:match("Lua (%d+).(%d+)")
-	majorversion = tonumber(majorversion)
-	if majorversion < 6 then
-		if majorversion == 5 and tonumber(minorversion) < 2 then
-			return true
-		end
-	end
-	return false
+local is_5_2_plus = (function()
+	local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
+	major, minor = tonumber(major), tonumber(minor)
+	return major > 5 or (major == 5 and minor >= 2)
 end)()
 
 local function pre_5_2_sh(tmp, cmd, input)
@@ -64,27 +59,28 @@ local function post_5_2_sh(tmp, cmd, input)
 end
 
 local function escapeShellArg(arg)
-	local string = tostring(arg)
+	local str = tostring(arg)
 	-- Match against the regular expression for valid shell arguments
-	if string:match("^[%w,._+:@%%/-]+$") == nil then
+	if str:match("^[%w,._+:@%%/-]+$") == nil then
 		-- Escape single quotes by replacing with '\\''
-		return string.format("'%s'", string:gsub("'", "'\\''"))
+		return str.format("'%s'", str:gsub("'", "'\\''"))
 	else
-		return string
+		return str
 	end
 end
 
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
-	if type(a) == 'boolean' or not k then return k end
+	if type(a) == 'boolean' and a then return k end
 	if type(a) == 'string' and #a > 0 then return k .. "=" .. escapeShellArg(a) end
 	if type(a) == 'number' then return k .. '=' .. tostring(a) end
-	error("invalid argument type: '" .. type(a) .. "' of value: '" .. a .. "'")
+	return nil
 end
 
 -- converts nested tables into a flat list of arguments and concatenated input
-local function flatten(input)
+local function flatten(input, opts)
 	local result = { args = {} }
+	local esc = opts.escape_args
 
 	local function f(t)
 		local keys = {}
@@ -94,16 +90,19 @@ local function flatten(input)
 			if type(v) == 'table' then
 				f(v)
 			else
-				table.insert(result.args, v)
+				table.insert(result.args, esc and escapeShellArg(v) or v)
 			end
 		end
 		for k, v in pairs(t) do
 			if k == '__input' then
-				result.input = (result.input and result.input or "") .. v
+				result.input = (result.input or "") .. v
 			elseif not keys[k] and k:sub(1, 1) ~= '_' then
 				local key = '-' .. k
 				if #k > 1 then key = '-' .. key end
-				table.insert(result.args, arg(key, v))
+				key = arg(key, v)
+				if key then
+					table.insert(result.args, key)
+				end
 			end
 		end
 	end
@@ -115,25 +114,27 @@ end
 -- returns a function that executes the command with given args and returns its
 -- output, exit status etc
 local function command(cmd, ...)
-	local prearg = { ... }
+	local preargs = flatten({ ... }, getmetatable(M))
 	return function(...)
-		local args = flatten({ ... })
+		local shmt = getmetatable(M)
+		local args = flatten({ ... }, shmt)
 		local s = cmd
-		for _, v in ipairs(prearg) do
+		for _, v in ipairs(preargs.args) do
 			s = s .. ' ' .. v
 		end
-		for _, v in pairs(args.args) do
+		for _, v in ipairs(args.args) do
 			s = s .. ' ' .. v
 		end
 		local t
-		if is_pre_5_2 then
-			t = pre_5_2_sh(M.shelua_tmpfile, s, args.input)
+		local input = (preargs.input or args.input) and (preargs.input or '') .. (args.input or '') or nil
+		if is_5_2_plus then
+			t = post_5_2_sh(shmt.tempfile_path, s, input)
 		else
-			t = post_5_2_sh(M.shelua_tmpfile, s, args.input)
+			t = pre_5_2_sh(shmt.tempfile_path, s, input)
 		end
 		local mt = {
-			__index = function(self, k, ...)
-				return M[k] --, ...
+			__index = function(self, k)
+				return M[k]
 			end,
 			__tostring = function(self)
 				-- return trimmed command output as a string
@@ -144,10 +145,12 @@ local function command(cmd, ...)
 	end
 end
 
--- export command() function and configurable temporary "input" file
-M.shelua_tmpfile = '/tmp/sheluainput'
-
 return setmetatable(M, {
+	-- temporary "input" file
+	tempfile_path = '/tmp/sheluainput',
+	-- escape unnamed shell arguments
+	-- NOTE: k = v table keys are still not escaped, k = v table values always are
+	escape_args = false,
 	-- set hook for undefined variables
 	__index = function(_, cmd)
 		return command(cmd)
