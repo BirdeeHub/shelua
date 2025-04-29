@@ -19,14 +19,18 @@
     overlays.default = overlay;
     overlays.shelua = overlay1;
     overlays.runLuaCommand = overlay2;
+    legacyPackages = forAllSys (system: let
+      pkgs = import nixpkgs { inherit system; overlays = [ overlay2 ]; };
+    in {
+      inherit (pkgs) runLuaCommand;
+    });
     packages = forAllSys (system: let
-      pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
+      pkgs = import nixpkgs { inherit system; overlays = [ overlay1 ]; };
     in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
       (builtins.map (li: { name = "she" + li.luaAttr; value = pkgs.shelua.override { lua = li; }; }))
       builtins.listToAttrs
     ] // {
       default = pkgs.shelua;
-      inherit (pkgs) runLuaCommand;
     });
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
