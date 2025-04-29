@@ -144,6 +144,10 @@ and the rest representing:
 
 `runLuaCommand :: name -> lua_interpreter_path -> drvArgs -> lua_command`
 
+You should provide the interpreter path via something like this to get the most of this function.
+
+`(pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter`
+
 ### in the lua command:
 
 - A `sh` global will be added containing `require('sh')`
