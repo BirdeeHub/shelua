@@ -60,7 +60,7 @@ end
 local function escapeShellArg(arg)
 	local str = tostring(arg)
 	if str:match("^[%w,._+:@%%/-]+$") == nil then
-		return str.format("'%s'", str:gsub("'", "'\\''"))
+		return string.format("'%s'", str:gsub("'", "'\\''"))
 	else
 		return str
 	end
