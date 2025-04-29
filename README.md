@@ -1,6 +1,7 @@
 # shelua
 
-[![Build Status](https://travis-ci.org/zserge/luash.svg)](https://travis-ci.org/zserge/luash)
+[![Lua][lua-shield]][lua-url]
+[![LuaRocks][luarocks-shield]][luarocks-url]
 
 Tiny library for shell scripting with Lua (inspired by zserge/luash).
 
@@ -58,7 +59,7 @@ sh.ls('/bin'):grep(filter):wc('-l')
 sh.ls '/bin' : grep filter : wc '-l'
 ```
 
-## Partial commands and commands with tricky names
+## Partial commands and commands with tricky names or characters
 
 You can use `sh` as a function to construct a command function, optionally
 pre-setting the arguments:
@@ -74,7 +75,10 @@ local gittag = sh('git', 'tag') -- gittag(...) is same as git('tag', ...)
 gittag('-l') -- list all git tags
 ```
 
-`sh` can be used as a function as well, it's an alias to `sh.command()`
+`require`ing this library also will add the `string.escapeShellArg` function,
+allowing you to use it on any string `("like so"):escapeShellArg()`.
+
+`string.escapeShellArg` receives a string and returns a string escaped for use in shell commands.
 
 ## Exit status and signal values
 
@@ -122,9 +126,41 @@ print(require('sh')["false"]().__exitcode)
 newsh["false"]()
 ```
 
-`require`ing this library also will add the `string.escapeShellArg` function,
-allowing you to use it on any string `("like so"):escapeShellArg()`.
+## For nix users
+
+It also exports a `runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
+
+`runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str)`
+
+where `n2l` is [this nix to lua library](https://github.com/BirdeeHub/nixToLua)
+
+and the rest representing:
+
+`runLuaCommand :: name -> lua_interpreter_path -> drvArgs -> lua_command`
+
+### in the lua command:
+
+- A `sh` global will be added containing `require('sh')`
+
+- That `require('sh')` will also add the `string.escapeShellArg` function.
+
+- `drvArgs.passthru` will be written verbatim to the `drv` global variable in lua,
+	minus any nix functions, achieved via the `n2l` library mentioned above
+
+- `$out` in for the derivation will have an associated `out` global in lua
+
+- A temporary directory will be created for use, with its path given by the `temp` global
+
+- `os.read_file(filename) -> string` and `os.readable(filename) -> boolean` will be added
+
+- `os.write_file(opts, filename, contents)` will be added where opts is `{ append = false, newline = true }` by default
 
 ## License
 
 Code is distributed under the MIT license.
+
+[lua-shield]: https://img.shields.io/badge/lua-%232C2D72.svg?style=for-the-badge&logo=lua&logoColor=white
+[lua-url]: https://www.lua.org/
+[luarocks-shield]:
+https://img.shields.io/luarocks/v/BirdeeHub/lze?logo=lua&color=purple&style=for-the-badge
+[luarocks-url]: https://luarocks.org/modules/BirdeeHub/shelua

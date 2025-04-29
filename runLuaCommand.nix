@@ -18,8 +18,8 @@ in {
     declare -f > "$TEMPDIR2/shell_hooks.sh"
     echo "_G.temp = '$TEMPDIR'
     _G.out = '${placeholder "out"}'
-    package.preload.sh = function() return dofile('${./sh.lua}') end
-    local ok, val = pcall(dofile, '${./stdenv.lua}')
+    package.preload.sh = function() return dofile('${./lua/sh.lua}') end
+    local ok, val = pcall(dofile, '${./nix.lua}')
     assert(ok, val)
     ok, val = pcall(val, '$TEMPDIR2')
     assert(ok, val)
