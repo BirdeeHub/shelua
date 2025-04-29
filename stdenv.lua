@@ -52,13 +52,7 @@ return function(tempdir)
       ok, err = pcall(err)
     end
   end
-  if not ok then
-    io.popen = oldpopen
-    os.execute = oldexec
-    sh.rm("-rf", temp)
-    sh.rm("-rf", tempdir)
-    error(tostring(err))
-  else
+  if ok then
     _G.drv = err
     package.preload.drv = function() return _G.drv end
     ok, err = pcall(dofile, os.getenv("luaBuilderPath"))
@@ -73,5 +67,11 @@ return function(tempdir)
     sh.rm("-rf", temp)
     sh.rm("-rf", tempdir)
     assert(ok, tostring(err))
+  else
+    io.popen = oldpopen
+    os.execute = oldexec
+    sh.rm("-rf", temp)
+    sh.rm("-rf", tempdir)
+    error(tostring(err))
   end
 end
