@@ -168,6 +168,7 @@ local MT = {
 
 local function deepcopy(orig, seen)
 	seen = seen or {}
+	-- memoize to prevent cycles
 	if seen[orig] then
 		return seen[orig]
 	end
