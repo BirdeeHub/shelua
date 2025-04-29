@@ -141,7 +141,11 @@ inputs.shelua = {
 
 The library is exported by the flake under `inputs.shelua.packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
 
-It also exports a `inputs.shelua.legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
+It also exports overlays. See the flake for more details.
+
+### In addition to the library:
+
+It exports a `inputs.shelua.legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
 `runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str) -> drv`
 
@@ -157,14 +161,15 @@ You should provide the interpreter path via something like this to get the most 
 
 ### in the lua command:
 
-- A `sh` global will be added containing `require('sh')`
+- An `sh` global will be added containing `require('sh')`
 
 - That `require('sh')` will also add the `string.escapeShellArg` function.
 
 - `drvArgs.passthru` will be written verbatim to the `drv` global variable in lua,
-	minus any nix functions, achieved via the `n2l` library mentioned above
+	minus any nix functions, achieved via the `n2l` library mentioned above.
+	This will apply even if you add them later via `overrideAttrs`
 
-- `$out` in for the derivation will have an associated `out` global in lua
+- `$out` for the derivation will have an associated `out` global in lua
 
 - A temporary directory will be created for use, with its path given by the `temp` global
 
