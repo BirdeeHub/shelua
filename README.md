@@ -1,8 +1,8 @@
-# luash
+# shelua
 
 [![Build Status](https://travis-ci.org/zserge/luash.svg)](https://travis-ci.org/zserge/luash)
 
-Tiny library for shell scripting with Lua (inspired by Python's sh module).
+Tiny library for shell scripting with Lua (inspired by zserge/luash).
 
 ## Install
 
