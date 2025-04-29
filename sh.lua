@@ -166,18 +166,18 @@ local MT = {
 	end,
 }
 local function deepcopy(orig)
-  local orig_type = type(orig)
-  local copy
-  if orig_type == 'table' then
-    copy = {}
-    for k, v in next, orig, nil do
-      copy[deepcopy(k)] = deepcopy(v)
-    end
-    setmetatable(copy, deepcopy(getmetatable(orig)))
-  else
-    copy = orig
-  end
-  return copy
+	local orig_type = type(orig)
+	local copy
+	if orig_type == 'table' then
+		copy = {}
+		for k, v in next, orig, nil do
+			copy[deepcopy(k)] = deepcopy(v)
+		end
+		setmetatable(copy, deepcopy(getmetatable(orig)))
+	else
+		copy = orig
+	end
+	return copy
 end
 MT.__unm = function(self)
 	return setmetatable({}, deepcopy(getmetatable(self)))
