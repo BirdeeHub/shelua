@@ -7,7 +7,7 @@ in {
   luaBuilder = if lib.isFunction text then text n2l else text;
   luaBuilderData = lib.pipe (finalAttrs.passthru or {}) [
     (lib.filterAttrsRecursive (n: v: ! lib.isFunction v))
-    (v: "return ${n2l.toLua (finalAttrs.passthru or {})}")
+    (v: "return ${n2l.toLua v}")
   ];
   passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
