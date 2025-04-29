@@ -35,7 +35,7 @@
         nativeBuildInputs = [ pkgs.makeWrapper ];
         passthru = {
           testdata = [ "some" "values" ];
-          notincluded = (system: builtins.trace system system);
+          notincluded = system: builtins.trace system system;
         };
       } /*lua*/''
         local inspect = require('inspect')
