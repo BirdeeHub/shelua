@@ -1,4 +1,9 @@
 {
+  description = ''
+    Tiny lua module to write unix shell scripts with lua (inspired by zserge/luash)
+
+    Also exports runLuaCommand, which is pkgs.runCommand but the command is in lua and uses shelua
+  '';
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     n2l.url = "github:BirdeeHub/nixToLua";
