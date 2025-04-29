@@ -24,14 +24,6 @@ return function(tempdir)
     end
     return false
   end
-  function string.escapeShellArg(arg)
-    local str = tostring(arg)
-    if str:match("^[%w,._+:@%%/-]+$") == nil then
-      return string.format("'%s'", str:gsub("'", "'\\''"))
-    else
-      return str
-    end
-  end
   local shell = os.getenv("SHELL")
   local oldpopen = io.popen
   local oldexec = os.execute

@@ -65,6 +65,7 @@ local function escapeShellArg(arg)
 		return str
 	end
 end
+string.escapeShellArg = escapeShellArg
 
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
