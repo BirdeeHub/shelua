@@ -122,7 +122,7 @@ print(require('sh')["false"]().__exitcode)
 newsh["false"]()
 ```
 
-This library also will add the `string.escapeShellArg` function,
+`require`ing this library also will add the `string.escapeShellArg` function,
 allowing you to use it on any string `("like so"):escapeShellArg()`.
 
 ## License
