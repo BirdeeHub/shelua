@@ -115,7 +115,6 @@ You can make a local copy with different settings by using the unary minus opera
 ```lua
 local newsh = -require('sh')
 local newsh_settings = getmetatable(newsh)
-newsh_settings.escape_args = true
 newsh_settings.assert_zero = true
 
 -- unaffected, prints 1
