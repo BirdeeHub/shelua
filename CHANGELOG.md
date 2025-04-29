@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/BirdeeHub/shelua/compare/v1.0.0...v1.0.1) (2025-04-29)
+
+
+### Bug Fixes
+
+* **feature:** sh() with no args returns settings set to modify (was previously an error) ([afeb8f1](https://github.com/BirdeeHub/shelua/commit/afeb8f16a4f68b4190c62fa8bc7caef1bafc2957))
+
 ## 1.0.0 (2025-04-29)
 
 
