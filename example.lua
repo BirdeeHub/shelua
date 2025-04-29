@@ -6,13 +6,11 @@ print('Current directory:', sh.pwd())
 
 -- commands can be grouped into the pipeline as nested functions
 print('Files in /bin:', sh.wc(sh.ls('/bin'), '-l'))
-print('Files in /usr/bin:', sh.wc(sh.ls('/usr/bin'), '-l'))
-print('files in both /usr/bin and /bin:', sh.wc(sh.ls('/usr/bin'), sh.ls('/bin'), '-l'))
 
 -- commands can be chained as in unix shell pipeline
-print(sh.ls('/bin'):wc("-l"))
+print(sh.echo('Hello World'):sed("s/Hello/Goodbye/g"))
 -- Lua allows to omit parens
-print(sh.ls '/bin' : wc '-l')
+print(sh.echo 'Hello World' :sed "s/Hello/Goodbye/g")
 
 -- intermediate output in the pipeline can be stored into variables
 local sedecho = sh.sed(sh.echo('hello', 'world'), 's/world/Lua/g')
