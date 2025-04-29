@@ -45,16 +45,33 @@ return function(tempdir)
     os.write_file({}, tempexec, "source " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
     return oldexec(shell .. " " .. tempexec, ...)
   end
-  local ok, err = pcall(dofile, os.getenv("luaBuilderPath"))
+  local ok, err = pcall(dofile, os.getenv("luaBuilderDataPath"))
   if not ok then
-    ok, err = pcall((loadstring or load), os.getenv("luaBuilder"))
+    ok, err = pcall((loadstring or load), os.getenv("luaBuilderData"))
     if ok and err then
       ok, err = pcall(err)
     end
   end
-  io.popen = oldpopen
-  os.execute = oldexec
-  sh.rm("-rf", temp)
-  sh.rm("-rf", tempdir)
-  assert(ok, tostring(err))
+  if not ok then
+    io.popen = oldpopen
+    os.execute = oldexec
+    sh.rm("-rf", temp)
+    sh.rm("-rf", tempdir)
+    error(tostring(err))
+  else
+    _G.drv = err
+    package.preload.drv = function() return _G.drv end
+    ok, err = pcall(dofile, os.getenv("luaBuilderPath"))
+    if not ok then
+      ok, err = pcall((loadstring or load), os.getenv("luaBuilder"))
+      if ok and err then
+        ok, err = pcall(err)
+      end
+    end
+    io.popen = oldpopen
+    os.execute = oldexec
+    sh.rm("-rf", temp)
+    sh.rm("-rf", tempdir)
+    assert(ok, tostring(err))
+  end
 end
