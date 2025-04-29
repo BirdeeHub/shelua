@@ -5,7 +5,10 @@ in {
   enableParallelBuilding = true;
   inherit name;
   luaBuilder = if lib.isFunction text then text n2l else text;
-  luaBuilderData = "return ${n2l.toLua (finalAttrs.passthru or {})}";
+  luaBuilderData = lib.pipe (finalAttrs.passthru or {}) [
+    (lib.filterAttrsRecursive (n: v: ! lib.isFunction v))
+    (v: "return ${n2l.toLua (finalAttrs.passthru or {})}")
+  ];
   passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
     TEMPDIR=$(mktemp -d)
