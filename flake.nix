@@ -51,7 +51,7 @@
         os.write_file({ append = true, }, outfile, outcat)
         os.write_file({}, outdrv, inspect(drv))
         getmetatable(sh).escape_args = true
-        sh.makeWrapper([[${pkgs.writeShellScript "testscript" ''echo "$@"''}]], outecho, "--add-flags", "testingtesting 1 2 3")
+        sh.makeWrapper([[${pkgs.writeShellScript "testscript" ''echo "$@"''}]], outecho, "--add-flags", "testingtesting '1 2' 3")
         getmetatable(sh).escape_args = false
         sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outecho)
         sh.chmod("+x", outfile)
