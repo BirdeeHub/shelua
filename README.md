@@ -98,6 +98,32 @@ somecommand({format="long", interactive=true, u=0})
 It becomes handy if you need to toggle or modify certain command line
 argumnents without manually changing the argumnts list.
 
+## Settings
+
+The sh variable has settings in its metatable that you may set to change its behavior.
+
+```lua
+local sh_settings = getmetatable(require('sh'))
+-- default values
+sh_settings.escape_args = false
+sh_settings.assert_zero = false
+sh_settings.tempfile_path = '/tmp/sheluainput'
+```
+
+You can make a local copy with different settings by using the unary minus operator.
+
+```lua
+local newsh = -require('sh')
+local newsh_settings = getmetatable(newsh)
+newsh_settings.escape_args = true
+newsh_settings.assert_zero = true
+
+-- unaffected, prints 1
+print(require('sh')["false"]().__exitcode)
+-- would throw an error due to assert_zero = true
+newsh["false"]()
+```
+
 ## License
 
 Code is distributed under the MIT license.
