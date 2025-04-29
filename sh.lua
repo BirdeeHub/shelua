@@ -133,7 +133,7 @@ local function command(cmd, ...)
 			t = pre_5_2_sh(shmt.tempfile_path, s, input)
 		end
 		if shmt.assert_zero and t.__exitcode ~= 0 then
-            error("Command " .. tostring(s) .. " exited with non-zero status: " .. tostring(t.__exitcode))
+			error("Command " .. tostring(s) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 		end
 		local mt = {
 			__index = function(self, k)
