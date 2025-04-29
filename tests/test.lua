@@ -4,13 +4,13 @@ local tests_passed = 0
 local tests_failed = 0
 require('gambiarra')(function(e, test, msg)
 	if e == 'pass' then
-		print("[32m✔[0m "..test..': '..msg)
+		print("[32m✔[0m " .. test .. ': ' .. msg)
 		tests_passed = tests_passed + 1
 	elseif e == 'fail' then
-		print("[31m✘[0m "..test..': '..msg)
+		print("[31m✘[0m " .. test .. ': ' .. msg)
 		tests_failed = tests_failed + 1
 	elseif e == 'except' then
-		print("[31m✘[0m "..test..': '..msg)
+		print("[31m✘[0m " .. test .. ': ' .. msg)
 		tests_failed = tests_failed + 1
 	end
 end)
@@ -32,7 +32,7 @@ test('Check command pipeline', function()
 	local r = sh.wc(sh.seq(1, 10), '-l')
 	ok(tonumber(tostring(r)) == 10, 'seq 1 10 | wc -l')
 
-	local r = sh.seq(1, 10) : wc('-l')
+	local r = sh.seq(1, 10):wc('-l')
 	ok(tonumber(tostring(r)) == 10, 'seq 1 10 | wc -l')
 
 	local r = sh.wc(sh.seq(1, 10), sh.seq(20, 25), '-l')
@@ -45,11 +45,15 @@ test('Check command structure', function()
 	if _VERSION ~= 'Lua 5.1' then
 		ok(r.__signal == 0, 'seq 1 3: signal')
 		ok(r.__exitcode == 0, 'seq 1 3: exit code')
+		getmetatable(sh).assert_zero = false
 		local r = sh('false')()
+		getmetatable(sh).assert_zero = true
 		ok(r.__exitcode ~= 0, 'false: exit code')
 		local r = sh('true')()
 		ok(r.__exitcode == 0, 'true: exit code')
+		getmetatable(sh).assert_zero = false
 		local r = sh.ls('/missing')
+		getmetatable(sh).assert_zero = true
 		ok(r.__exitcode == 2, 'ls /missing: exit code')
 	end
 end)
@@ -68,9 +72,8 @@ test('Check sh called as function', function()
 end)
 
 test('Check command with table args', function()
-	local r = sh.stat('/bin', {format='%a %n'})
+	local r = sh.stat('/bin', { format = '%a %n' })
 	ok(tostring(r) == '755 /bin', 'stat --format "%a %n" /bin')
 end)
 
 if tests_failed > 0 then os.exit(1) end
-

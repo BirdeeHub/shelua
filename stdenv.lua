@@ -1,5 +1,6 @@
 return function(tempdir)
   _G.sh = require("sh")
+  getmetatable(_G.sh).assert_zero = true
   function os.write_file(opts, filename, content)
     local file = assert(io.open(filename, opts.append and "a" or "w"))
     file:write(content .. (opts.newline ~= false and "\n" or ""))

@@ -132,6 +132,9 @@ local function command(cmd, ...)
 		else
 			t = pre_5_2_sh(shmt.tempfile_path, s, input)
 		end
+		if shmt.assert_zero and t.__exitcode ~= 0 then
+            error("Command " .. tostring(s) .. " exited with non-zero status: " .. tostring(t.__exitcode))
+		end
 		local mt = {
 			__index = function(self, k)
 				return M[k]
@@ -151,6 +154,8 @@ return setmetatable(M, {
 	-- escape unnamed shell arguments
 	-- NOTE: k = v table keys are still not escaped, k = v table values always are
 	escape_args = false,
+	-- Assert that exit code is 0 or throw and error
+	assert_zero = false,
 	-- set hook for undefined variables
 	__index = function(_, cmd)
 		return command(cmd)
