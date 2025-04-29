@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/BirdeeHub/shelua/compare/v1.0.1...v1.0.2) (2025-04-29)
+
+
+### Bug Fixes
+
+* **feature:** added transforms setting ([2179d92](https://github.com/BirdeeHub/shelua/commit/2179d92ff32ba7c9d7c45ddc448ca6291658f94d))
+
 ## [1.0.1](https://github.com/BirdeeHub/shelua/compare/v1.0.0...v1.0.1) (2025-04-29)
 
 
