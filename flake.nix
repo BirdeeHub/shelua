@@ -51,6 +51,8 @@
         getmetatable(sh).escape_args = false
         sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outecho)
         sh.chmod("+x", outfile)
+        package.path = package.path .. ";${./tests}/?.lua"
+        require("test")
       '';
     });
   };
