@@ -4,7 +4,7 @@ local is_5_2_plus = (function()
 	return major > 5 or (major == 5 and minor >= 2)
 end)()
 
-local function pre_5_2_sh(tmp, cmd, input)
+local function pre_5_2_sh(tmp, cmd, input, apply)
 	if input then
 		local f = io.open(tmp, 'w')
 		if f then
@@ -13,7 +13,7 @@ local function pre_5_2_sh(tmp, cmd, input)
 			cmd = cmd .. ' <' .. tmp
 		end
 	end
-	local p = io.popen(cmd .. "; echo __EXITCODE__$?;", 'r')
+	local p = io.popen(apply(cmd) .. "\necho __EXITCODE__$?", 'r')
 	local output
 	if p then
 		output = p:read('*a')
@@ -32,7 +32,7 @@ local function pre_5_2_sh(tmp, cmd, input)
 	}
 end
 
-local function post_5_2_sh(tmp, cmd, input)
+local function post_5_2_sh(tmp, cmd, input, apply)
 	if input then
 		local f = io.open(tmp, 'w')
 		if f then
@@ -41,7 +41,7 @@ local function post_5_2_sh(tmp, cmd, input)
 			cmd = cmd .. ' <' .. tmp
 		end
 	end
-	local p = io.popen(cmd, 'r')
+	local p = io.popen(apply(cmd), 'r')
 	local output, exit, status
 	if p then
 		output = p:read('*a')
@@ -125,20 +125,23 @@ local function command(self, cmdstr, ...)
 		end
 		local t
 		local input = (preargs.input or args.input) and (preargs.input or '') .. (args.input or '') or nil
+		local apply = function(c)
+			local res = c
+			for _, f in ipairs(shmt.transforms or {}) do
+				res = f(res)
+			end
+			return res
+		end
 		if is_5_2_plus then
-			t = post_5_2_sh(shmt.tempfile_path, cmd, input)
+			t = post_5_2_sh(shmt.tempfile_path, cmd, input, apply)
 		else
-			t = pre_5_2_sh(shmt.tempfile_path, cmd, input)
+			t = pre_5_2_sh(shmt.tempfile_path, cmd, input, apply)
 		end
 		if shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 		end
 		local mt = {
-			__metatable = {
-				tempfile_path = shmt.tempfile_path,
-				escape_args = shmt.escape_args,
-				assert_zero = shmt.assert_zero,
-			},
+			__metatable = shmt,
 			__index = function(s, c)
 				return command(s, c)
 			end,
@@ -160,6 +163,9 @@ local MT = {
 		escape_args = false,
 		-- Assert that exit code is 0 or throw and error
 		assert_zero = false,
+		-- a list of functions to run in order on the command before running it.
+		-- each one recieves the final command and is to return a string representing the new one
+		transforms = {},
 	},
 	-- set hook for undefined variables
 	__index = function(self, cmd)

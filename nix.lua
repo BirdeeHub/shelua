@@ -3,6 +3,15 @@ return function(tempdir)
   local sh_settings = getmetatable(_G.sh)
   sh_settings.assert_zero = true
   sh_settings.tempfile_path = tempdir .. "/sheluainput"
+  local shell = os.getenv("SHELL")
+  local function with_shell_hooks(cmd)
+    return string.format(
+      "%s -c %s",
+      string.escapeShellArg(shell),
+      string.escapeShellArg("source " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
+    )
+  end
+  sh_settings.transforms = { with_shell_hooks }
   function os.write_file(opts, filename, content)
     local file = assert(io.open(filename, opts.append and "a" or "w"))
     file:write(content .. (opts.newline ~= false and "\n" or ""))
@@ -24,19 +33,6 @@ return function(tempdir)
     end
     return false
   end
-  local shell = os.getenv("SHELL")
-  local oldpopen = io.popen
-  local oldexec = os.execute
-  io.popen = function(cmd, ...)
-    local tempexec = tempdir .. "/popen-" .. math.random(0, 100)
-    os.write_file({}, tempexec, "source " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
-    return oldpopen(shell .. " " .. tempexec, ...)
-  end
-  os.execute = function(cmd, ...)
-    local tempexec = tempdir .. "/exec-" .. math.random(0, 100)
-    os.write_file({}, tempexec, "source " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
-    return oldexec(shell .. " " .. tempexec, ...)
-  end
   local ok, err = pcall(dofile, os.getenv("luaBuilderDataPath"))
   if not ok then
     ok, err = pcall((loadstring or load), os.getenv("luaBuilderData"))
@@ -47,21 +43,19 @@ return function(tempdir)
   if ok then
     _G.drv = err
     package.preload.drv = function() return _G.drv end
-    ok, err = pcall(dofile, os.getenv("luaBuilderPath"))
-    if not ok then
+    local bp = os.getenv("luaBuilderPath")
+    if bp then
+      ok, err = pcall(dofile, bp)
+    else
       ok, err = pcall((loadstring or load), os.getenv("luaBuilder"))
       if ok and err then
         ok, err = pcall(err)
       end
     end
-    io.popen = oldpopen
-    os.execute = oldexec
     sh.rm("-rf", temp)
     sh.rm("-rf", tempdir)
     assert(ok, tostring(err))
   else
-    io.popen = oldpopen
-    os.execute = oldexec
     sh.rm("-rf", temp)
     sh.rm("-rf", tempdir)
     error(tostring(err))

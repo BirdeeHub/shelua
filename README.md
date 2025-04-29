@@ -119,6 +119,11 @@ local sh_settings = require('sh')() -- alias for getmetatable(require('sh'))
 sh_settings.escape_args = false
 sh_settings.assert_zero = false
 sh_settings.tempfile_path = '/tmp/sheluainput'
+-- a list of functions to apply to the command before execution.
+-- the first one recieves the full command as a string,
+-- and returns a modified command string
+-- and then is passed to the next function in the list.
+sh_settings.transforms = {}
 ```
 
 You can make a local copy with different settings by using the unary minus operator.
