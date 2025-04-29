@@ -33,6 +33,10 @@
     in {
       default = pkgs.runLuaCommand "testpkg" (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter {
         nativeBuildInputs = [ pkgs.makeWrapper ];
+        passthru = {
+          testdata = [ "some" "values" ];
+          notincluded = (system: builtins.trace system system);
+        };
       } /*lua*/''
         local inspect = require('inspect')
         local outbin = out .. "/bin"
