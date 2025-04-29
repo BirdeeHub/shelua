@@ -144,6 +144,12 @@ inputs.shelua = {
 
 The library is exported by the flake under `inputs.shelua.packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
 
+You may import any of them for any nixpkgs lua interpreter like this if you don't want to match them up.
+
+```nix
+luaEnv = pkgs.lua5_2.withPackages (ps: [(inputs.shelua.packages.${system}.default.override { luapkgs = ps; })]);
+```
+
 It also exports overlays. See the [flake](./flake.nix) for more details.
 
 ### In addition to the library:

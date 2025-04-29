@@ -4,6 +4,7 @@ stdenv.mkDerivation (finalAttrs: let
 in {
   enableParallelBuilding = true;
   inherit name;
+  luaInterpreter = interpreter;
   luaBuilder = if lib.isFunction text then text n2l else text;
   luaBuilderData = lib.pipe (finalAttrs.passthru or {}) [
     (lib.filterAttrsRecursive (n: v: ! lib.isFunction v))
@@ -23,7 +24,7 @@ in {
     assert(ok, val)
     ok, val = pcall(val, '$TEMPDIR2')
     assert(ok, val)
-    " | exec ${interpreter} -
+    " | exec "$luaInterpreter" -
   '';
 } // lib.optionalAttrs (!derivationArgs ? meta) {
   pos =
