@@ -7,7 +7,11 @@ Tiny library for shell scripting with Lua (inspired by zserge/luash).
 
 ## Install
 
-currently just clone this repo and copy sh.lua into your project.
+via luarocks: `luarocks install shelua`
+
+[via nix](#for-nix-users)
+
+Or just clone this repo and copy `lua/sh.lua` into your project.
 
 ## Simple usage
 
