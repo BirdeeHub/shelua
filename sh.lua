@@ -165,20 +165,31 @@ local MT = {
 		return command(self, cmd, ...)
 	end,
 }
-local function deepcopy(orig)
+
+local function deepcopy(orig, seen)
+	seen = seen or {}
+	if seen[orig] then
+		return seen[orig]
+	end
 	local orig_type = type(orig)
 	local copy
 	if orig_type == 'table' then
 		copy = {}
+		seen[orig] = copy
 		for k, v in next, orig, nil do
-			copy[deepcopy(k)] = deepcopy(v)
+			copy[deepcopy(k, seen)] = deepcopy(v, seen)
 		end
-		setmetatable(copy, deepcopy(getmetatable(orig)))
 	else
 		copy = orig
 	end
+	-- Always try to copy metatable (if present)
+	local mt = getmetatable(orig)
+	if mt then
+		setmetatable(copy, deepcopy(mt, seen))
+	end
 	return copy
 end
+
 MT.__unm = function(self)
 	return setmetatable({}, deepcopy(getmetatable(self)))
 end
