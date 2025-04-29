@@ -6,11 +6,11 @@
   outputs = { nixpkgs, n2l, ... }: let
     forAllSys = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
     overlay = final: prev: {
-      shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
+      shelua = prev.callPackage ./. { lua = prev.lua5_2; };
       runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
     };
     overlay1 = final: prev: {
-      shelua = prev.callPackage ./. { lua_interpreter = prev.lua5_2; };
+      shelua = prev.callPackage ./. { lua = prev.lua5_2; };
     };
     overlay2 = final: prev: {
       runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
@@ -22,7 +22,7 @@
     packages = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
     in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
-      (builtins.map (li: { name = "she" + li.luaAttr; value = pkgs.shelua.override { lua_interpreter = li; }; }))
+      (builtins.map (li: { name = "she" + li.luaAttr; value = pkgs.shelua.override { lua = li; }; }))
       builtins.listToAttrs
     ] // {
       default = pkgs.shelua;
