@@ -132,9 +132,16 @@ newsh["false"]()
 
 ## For nix users
 
-The library is exported by the flake under `packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
+```nix
+inputs.shelua = {
+	url = "github:BirdeeHub/shelua";
+	inputs.nixpkgs.follows = "nixpkgs";
+};
+```
 
-It also exports a `legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
+The library is exported by the flake under `inputs.shelua.packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
+
+It also exports a `inputs.shelua.legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
 `runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str)`
 
