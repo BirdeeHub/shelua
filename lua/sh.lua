@@ -166,8 +166,13 @@ local MT = {
 		return command(self, cmd)
 	end,
 	-- allow to call sh to run shell commands
+	-- or no arguments to return settings table
 	__call = function(self, cmd, ...)
-		return command(self, cmd, ...)
+		if cmd == nil then
+			return getmetatable(self)
+		else
+			return command(self, cmd, ...)
+		end
 	end,
 }
 

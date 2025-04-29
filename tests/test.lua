@@ -45,15 +45,15 @@ test('Check command structure', function()
 	if _VERSION ~= 'Lua 5.1' then
 		ok(r.__signal == 0, 'seq 1 3: signal')
 		ok(r.__exitcode == 0, 'seq 1 3: exit code')
-		getmetatable(sh).assert_zero = false
+		sh().assert_zero = false
 		local r = sh('false')()
-		getmetatable(sh).assert_zero = true
+		sh().assert_zero = true
 		ok(r.__exitcode ~= 0, 'false: exit code')
 		local r = sh('true')()
 		ok(r.__exitcode == 0, 'true: exit code')
-		getmetatable(sh).assert_zero = false
+		sh().assert_zero = false
 		local r = sh.ls('/missing')
-		getmetatable(sh).assert_zero = true
+		sh().assert_zero = true
 		ok(r.__exitcode == 2, 'ls /missing: exit code')
 	end
 end)
@@ -67,7 +67,7 @@ end)
 
 test('Check sh called as function', function()
 	local seq10 = sh('seq', 10)
-	ok(type(seq10) == 'function', 'sh() returns a command function')
+	ok(type(seq10) == 'function', 'sh("cmd") returns a command function')
 	ok(tostring(seq10(12)) == '10\n11\n12', 'seq 10 12')
 end)
 

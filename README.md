@@ -110,8 +110,11 @@ argumnents without manually changing the argumnts list.
 
 The sh variable has settings in its metatable that you may set to change its behavior.
 
+If you call the sh function directly with no arguments, it will return its settings table
+which you may modify.
+
 ```lua
-local sh_settings = getmetatable(require('sh'))
+local sh_settings = require('sh')() -- alias for getmetatable(require('sh'))
 -- default values
 sh_settings.escape_args = false
 sh_settings.assert_zero = false
@@ -122,7 +125,7 @@ You can make a local copy with different settings by using the unary minus opera
 
 ```lua
 local newsh = -require('sh')
-getmetatable(newsh).assert_zero = true
+newsh().assert_zero = true
 
 -- unaffected, prints 1
 print(require('sh')["false"]().__exitcode)
