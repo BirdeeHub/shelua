@@ -1,11 +1,11 @@
 { lib, stdenv, n2l, ... }: name: interpreter: env: text:
-stdenv.mkDerivation (let
+stdenv.mkDerivation (finalAttrs: let
   derivationArgs = if lib.isFunction env then env n2l else env;
 in {
   enableParallelBuilding = true;
   inherit name;
   luaBuilder = if lib.isFunction text then text n2l else text;
-  luaBuilderData = "return ${n2l.toLua derivationArgs}";
+  luaBuilderData = "return ${n2l.toLua finalAttrs.passthru or {}}";
   passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
     TEMPDIR=$(mktemp -d)
