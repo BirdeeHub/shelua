@@ -1,6 +1,8 @@
 return function(tempdir)
   _G.sh = require("sh")
-  getmetatable(_G.sh).assert_zero = true
+  local sh_settings = getmetatable(_G.sh)
+  sh_settings.assert_zero = true
+  sh_settings.tempfile_path = tempdir .. "/sheluainput"
   function os.write_file(opts, filename, content)
     local file = assert(io.open(filename, opts.append and "a" or "w"))
     file:write(content .. (opts.newline ~= false and "\n" or ""))
@@ -52,7 +54,7 @@ return function(tempdir)
   end
   io.popen = oldpopen
   os.execute = oldexec
-  sh.rm("-rf", tempdir)
   sh.rm("-rf", temp)
+  sh.rm("-rf", tempdir)
   assert(ok, tostring(err))
 end
