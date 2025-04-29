@@ -39,13 +39,17 @@
         local outfile = outbin .. "/testpkg"
         local outdrv = outbin .. "/testdrv"
         local outcat = outbin .. "/newcat"
+        local outecho = outbin .. "/newecho"
         sh.mkdir("-p", outbin)
         os.write_file({}, outfile, [[#!${pkgs.bash}/bin/bash]])
         os.write_file({ append = true, }, outfile, [[echo "hello world!"]])
         os.write_file({ append = true, }, outfile, [[cat ]] .. outdrv)
         os.write_file({ append = true, }, outfile, outcat)
         os.write_file({}, outdrv, inspect(drv))
-        sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outfile)
+        getmetatable(sh).escape_args = true
+        sh.makeWrapper([[${pkgs.writeShellScript "testscript" ''echo "$@"''}]], outecho, "--add-flags", "testingtesting 1 2 3")
+        getmetatable(sh).escape_args = false
+        sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outecho)
         sh.chmod("+x", outfile)
       '';
     });
