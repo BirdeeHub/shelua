@@ -96,7 +96,7 @@ local function flatten(input, opts)
 		for k, v in pairs(t) do
 			if k == '__input' then
 				result.input = (result.input or "") .. v
-			elseif not keys[k] and k:sub(1, 1) ~= '_' then
+			elseif not keys[k] and k:sub(1, 2) ~= '__' then
 				local key = '-' .. k
 				if #k > 1 then key = '-' .. key end
 				key = arg(key, v)
