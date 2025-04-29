@@ -1,17 +1,17 @@
-package = "luash"
+package = "shelua"
 version = "scm-0"
 
 source = {
-	url = "git://github.com/zserge/luash.git",
+	url = "git://github.com/BirdeeHub/" .. package .. ".git",
 }
 
 description = {
 	summary = "Tiny library for shell scripting with Lua",
 	detailed = [[
-		Tiny library with syntax sugar for shell scripting in Lua (inspired by
-		Python's sh module, but is much more simplified). Best use with Lua 5.2.
+		Tiny library with syntax sugar for (unix) shell scripting in Lua (inspired by
+		zserge/luash but with features localized to sh variable)
 	]],
-	homepage = "http://github.com/zserge/luash",
+	homepage = "http://github.com/BirdeeHub/" .. package,
 	license = "MIT/X11",
 }
 
