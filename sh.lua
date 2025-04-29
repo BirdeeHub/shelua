@@ -133,9 +133,11 @@ local function command(self, cmdstr, ...)
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 		end
 		local mt = {
-			tempfile_path = shmt.tempfile_path,
-			escape_args = shmt.escape_args,
-			assert_zero = shmt.assert_zero,
+			__metatable = {
+				tempfile_path = shmt.tempfile_path,
+				escape_args = shmt.escape_args,
+				assert_zero = shmt.assert_zero,
+			},
 			__index = function(s, c)
 				return command(s, c)
 			end,
@@ -149,13 +151,15 @@ local function command(self, cmdstr, ...)
 end
 
 local MT = {
-	-- temporary "input" file
-	tempfile_path = '/tmp/sheluainput',
-	-- escape unnamed shell arguments
-	-- NOTE: k = v table keys are still not escaped, k = v table values always are
-	escape_args = false,
-	-- Assert that exit code is 0 or throw and error
-	assert_zero = false,
+	__metatable = {
+		-- temporary "input" file
+		tempfile_path = '/tmp/sheluainput',
+		-- escape unnamed shell arguments
+		-- NOTE: k = v table keys are still not escaped, k = v table values always are
+		escape_args = false,
+		-- Assert that exit code is 0 or throw and error
+		assert_zero = false,
+	},
 	-- set hook for undefined variables
 	__index = function(self, cmd)
 		return command(self, cmd)
@@ -192,6 +196,8 @@ local function deepcopy(orig, seen)
 end
 
 MT.__unm = function(self)
-	return setmetatable({}, deepcopy(getmetatable(self)))
+	local newMT = deepcopy(MT)
+	newMT.__metatable = deepcopy(getmetatable(self))
+	return setmetatable({}, newMT)
 end
 return setmetatable({}, MT)
