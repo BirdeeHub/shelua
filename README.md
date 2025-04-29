@@ -132,7 +132,7 @@ newsh["false"]()
 
 ## For nix users
 
-The library is exported by the flake as `pkgs.default`, `pkgs.shelua5_1`, `pkgs.shelua5_2`, `pkgs.shelua5_3`, `pkgs.shelua5_4`, `pkgs.sheluajit_2_1`.
+The library is exported by the flake under `packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
 
 It also exports a `legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
