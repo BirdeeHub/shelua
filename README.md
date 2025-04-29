@@ -143,13 +143,13 @@ The library is exported by the flake under `inputs.shelua.packages.${system}` as
 
 It also exports a `inputs.shelua.legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
-`runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str)`
+`runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str) -> drv`
 
 where `n2l` is [this nix to lua library](https://github.com/BirdeeHub/nixToLua)
 
 and the rest representing:
 
-`runLuaCommand :: name -> lua_interpreter_path -> drvArgs -> lua_command`
+`runLuaCommand :: name -> lua_interpreter_path -> drvArgs -> lua_command -> drv`
 
 You should provide the interpreter path via something like this to get the most of this function.
 
