@@ -141,7 +141,7 @@ inputs.shelua = {
 
 The library is exported by the flake under `inputs.shelua.packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
 
-It also exports overlays. See the flake for more details.
+It also exports overlays. See the [flake](./flake.nix) for more details.
 
 ### In addition to the library:
 
