@@ -128,7 +128,7 @@ newsh["false"]()
 
 ## For nix users
 
-It also exports a `runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
+It also exports a `legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
 `runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str)`
 
