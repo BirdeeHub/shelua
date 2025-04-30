@@ -8,7 +8,7 @@ return function(tempdir)
     return string.format(
       "%s -c %s",
       string.escapeShellArg(shell),
-      string.escapeShellArg("source " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
+      string.escapeShellArg(". " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
     )
   end
   sh_settings.transforms = { with_shell_hooks }
