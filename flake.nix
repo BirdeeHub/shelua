@@ -72,10 +72,11 @@
         package.path = package.path .. ";${./tests}/?.lua"
         require("test")
       '';
-    in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
+      run_on = with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ];
+    in nixpkgs.lib.pipe run_on [
       (builtins.map (li: { name = "runLuaCommand-" + li.luaAttr; value = mkCmdTest li; }))
       builtins.listToAttrs
-    ] // (nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
+    ] // (nixpkgs.lib.pipe run_on [
       (builtins.map (li: { name = "withPackages-" + li.luaAttr; value = mkBuildTest li; }))
       builtins.listToAttrs
     ]));
