@@ -16,6 +16,7 @@ require('gambiarra')(function(e, test, msg)
 end)
 
 local sh = require('sh')
+sh().assert_zero = true
 
 test('Check command output', function()
 	ok(tostring(sh.seq(1, 5)) == '1\n2\n3\n4\n5', 'seq 1 5')
