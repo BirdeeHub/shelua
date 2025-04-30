@@ -202,7 +202,7 @@ local function deepcopy(orig, seen)
 	-- Always try to copy metatable (if present)
 	local mt = getmetatable(orig)
 	if mt then
-		setmetatable(copy, deepcopy(mt, seen))
+		pcall(setmetatable, copy, deepcopy(mt, seen))
 	end
 	return copy
 end

@@ -15,7 +15,7 @@ require('gambiarra')(function(e, test, msg)
 	end
 end)
 
-local sh = require('sh')
+local sh = -require('sh')
 sh().assert_zero = true
 
 test('Check command output', function()
