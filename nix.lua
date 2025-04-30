@@ -52,11 +52,13 @@ return function(shell_hooks)
       end
     end
     sh.rm("-rf", temp)
-    sh.rm("-rf", shell_hooks)
+    sh_settings.transforms = {}
+    sh.rm(shell_hooks)
     assert(ok, tostring(err))
   else
     sh.rm("-rf", temp)
-    sh.rm("-rf", shell_hooks)
+    sh_settings.transforms = {}
+    sh.rm(shell_hooks)
     error(tostring(err))
   end
 end
