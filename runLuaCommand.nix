@@ -1,10 +1,10 @@
 { lib
 , stdenv
 , n2l ? import (builtins.fetchGit (let
-    rev = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.n2l.locked.rev;
+    lock = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.n2l.locked;
   in {
-    url = "https://github.com/BirdeeHub/nixToLua.git";
-    inherit rev;
+    url = "https://github.com/${lock.owner}/${lock.repo}.git";
+    rev = lock.rev;
   }))
 , ...
 }: name: interpreter: env: text:
