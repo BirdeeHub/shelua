@@ -115,7 +115,7 @@ local function command(self, cmdstr, ...)
 	return function(...)
 		local shmt = getmetatable(self)
 		local args = flatten({ ... }, shmt)
-		local cmd = cmdstr
+		local cmd = type(cmdstr) == "string" and cmdstr or error("Shell commands must be strings!")
 		for _, v in ipairs(preargs.args) do
 			cmd = cmd .. ' ' .. v
 		end
@@ -166,18 +166,13 @@ local MT = {
 		-- each one recieves the final command and is to return a string representing the new one
 		transforms = {},
 	},
-	-- set hook for undefined variables
+	-- set hook for index as shell command
 	__index = function(self, cmd)
 		return command(self, cmd)
 	end,
-	-- allow to call sh to run shell commands
-	-- or no arguments to return settings table
-	__call = function(self, cmd, ...)
-		if cmd == nil then
-			return getmetatable(self)
-		else
-			return command(self, cmd, ...)
-		end
+	-- change settings by assigning them to table
+	__newindex = function(self, k, v)
+		getmetatable(self)[k] = v
 	end,
 }
 
@@ -205,10 +200,29 @@ local function deepcopy(orig, seen)
 	end
 	return copy
 end
-
-MT.__unm = function(self)
-	local newMT = deepcopy(MT)
-	newMT.__metatable = deepcopy(getmetatable(self))
-	return setmetatable({}, newMT)
+-- allow to call sh with a string to run shell commands
+-- or no arguments to return clone
+-- or first arg as table to tbl_extend settings then clone
+-- or first arg as function that recieves old settings to set new settings and clone
+MT.__call = function(self, cmd, ...)
+	if cmd == nil then
+		local newMT = deepcopy(MT)
+		newMT.__metatable = deepcopy(getmetatable(self))
+		return setmetatable({}, newMT)
+	elseif type(cmd) == 'table' then
+		local newMT = deepcopy(MT)
+		local config = deepcopy(getmetatable(self))
+		for k, v in pairs(cmd) do
+			config[k] = v
+		end
+		newMT.__metatable = config
+		return setmetatable({}, newMT)
+	elseif type(cmd) == 'function' then
+		local newMT = deepcopy(MT)
+		newMT.__metatable = cmd(self)
+		return setmetatable({}, newMT)
+	else
+		return command(self, cmd, ...)
+	end
 end
 return setmetatable({}, MT)

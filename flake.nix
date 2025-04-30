@@ -63,9 +63,9 @@
         os.write_file({ append = true, }, outfile, [[cat ]] .. outdrv)
         os.write_file({ append = true, }, outfile, outcat)
         os.write_file({}, outdrv, inspect(drv))
-        sh().escape_args = true
+        sh.escape_args = true
         sh.makeWrapper([[${pkgs.writeShellScript "testscript" ''echo "$@"''}]], outecho, "--add-flags", "testingtesting '1 2' 3")
-        sh().escape_args = false
+        sh.escape_args = false
         sh.makeWrapper([[${pkgs.coreutils}/bin/cat]], outcat, "--add-flags", outecho)
         sh.chmod("+x", outfile)
         dofile("${./example.lua}")

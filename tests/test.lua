@@ -15,8 +15,7 @@ require('gambiarra')(function(e, test, msg)
 	end
 end)
 
-local sh = -require('sh')
-sh().assert_zero = true
+local sh = require('sh')({ assert_zero = true })
 
 test('Check command output', function()
 	ok(tostring(sh.seq(1, 5)) == '1\n2\n3\n4\n5', 'seq 1 5')
@@ -46,15 +45,15 @@ test('Check command structure', function()
 	if _VERSION ~= 'Lua 5.1' then
 		ok(r.__signal == 0, 'seq 1 3: signal')
 		ok(r.__exitcode == 0, 'seq 1 3: exit code')
-		sh().assert_zero = false
+		sh.assert_zero = false
 		local r = sh('false')()
-		sh().assert_zero = true
+		sh.assert_zero = true
 		ok(r.__exitcode ~= 0, 'false: exit code')
 		local r = sh('true')()
 		ok(r.__exitcode == 0, 'true: exit code')
-		sh().assert_zero = false
+		sh.assert_zero = false
 		local r = sh.ls('/missing')
-		sh().assert_zero = true
+		sh.assert_zero = true
 		ok(r.__exitcode == 2, 'ls /missing: exit code')
 	end
 end)

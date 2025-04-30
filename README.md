@@ -27,10 +27,9 @@ It is useful when you have a short build or wrapper script that needs to deal wi
 
 Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
 
-# ATTENTION:
-
-> [!WARNING] This library is still under development. It is not stable yet. Use at your own risk.
-> It may undergo major changes, such as to how settings are applied.
+> [!WARNING]
+>
+> This library is still under development. It is not stable yet. Use at your own risk. It may undergo major changes.
 
 ## Install
 
@@ -70,7 +69,7 @@ one I/O loop at a time). So the inner-most command is executed, its output is
 read, the the outer command is execute with the output redirected etc.
 
 ``` lua
-require('sh')
+local sh = require('sh')
 
 local words = 'foo\nbar\nfoo\nbaz\n'
 local u = sh.uniq(sh.sort({__input = words})) -- like $(echo ... | sort | uniq)
@@ -95,10 +94,10 @@ sh.ls '/bin' : grep filter : wc '-l'
 Key-value arguments can be also specified as argument table pairs:
 
 ```lua
-require('sh')
+local sh = require('sh')
 
 -- $ somecommand --format=long --interactive -u=0
-somecommand({format="long", interactive=true, u=0})
+sh.somecommand({format="long", interactive=true, u=0})
 ```
 
 It becomes handy if you need to toggle or modify certain command line
@@ -106,7 +105,7 @@ arguments without manually changing the arguments list.
 
 ## Partial commands and commands with tricky names or characters
 
-You can use `sh` as a function to construct a command function, optionally
+You can call `sh` with a string as the first argument to construct a command function, optionally
 pre-setting the arguments:
 
 ``` lua
@@ -114,8 +113,9 @@ local sh = require('sh')
 
 local truecmd = sh('true') -- because "true" is a Lua keyword
 local chrome = sh('google-chrome') -- because '-' is an operator
+local chromeagain = sh['google-chrome'] -- same as above
 
-local gittag = sh('git', 'tag') -- gittag(...) is same as git('tag', ...)
+local gittag = sh('git', 'tag') -- gittag(...) is same as sh.git('tag', ...)
 
 gittag('-l') -- list all git tags
 ```
@@ -139,35 +139,43 @@ It will detect the version and in versions older than 5.2 it will add `\necho __
 
 The sh variable has settings in its metatable that you may set to change its behavior.
 
-If you call the sh function directly with no arguments, it will return its settings table
-which you may modify.
+If you assign a value to the sh table, it will set the value in the metatable.
 
 ```lua
-local sh_settings = require('sh')() -- alias for getmetatable(require('sh'))
+local sh = require('sh')
 -- default values
-sh_settings.escape_args = false
-sh_settings.assert_zero = false
-sh_settings.tempfile_path = '/tmp/sheluainput'
+sh.escape_args = false
+sh.assert_zero = false
+sh.tempfile_path = os.tmpname()
 -- a list of functions to apply to the command before execution.
 -- the first one recieves the full command as a string,
 -- and returns a modified command string
 -- and then is passed to the next function in the list.
-sh_settings.transforms = {}
+sh.transforms = {}
 ```
 
-You can make a local copy with different settings by using the unary minus operator.
+You can make a local copy with different settings by calling the sh table as a function with no arguments.
+
+Or you can call it with a table to modify the existing settings and return a new sh table.
+
+Or you can call it with a function that recieves the old settings table and returns a new one.
 
 ```lua
-local newsh = -require('sh')
-newsh().assert_zero = true
+-- these 3 forms are equivalent
+local newsh = require('sh')()
+newsh.assert_zero = true
+-- or
+local newersh = require('sh')({assert_zero = true})
+-- or
+local evennewersh = require('sh')(function(s) s.assert_zero = true return s end)
 
 -- unaffected, prints 1
 print(require('sh')["false"]().__exitcode)
 -- would throw an error due to assert_zero = true
-newsh["false"]()
+print(newsh["false"]().__exitcode)
 ```
 
-If you wanted to do multi-threaded `lua`, each one can be given its own `tempfile_path` for example.
+If you wanted to do multi-threaded `lua`, each one should be given its own `tempfile_path` for example.
 
 ## For nix users
 

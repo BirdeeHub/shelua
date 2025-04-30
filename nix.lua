@@ -1,7 +1,6 @@
 return function(shell_hooks)
   _G.sh = require("sh")
-  local sh_settings = sh()
-  sh_settings.assert_zero = true
+  sh.assert_zero = true
   local shell = os.getenv("SHELL")
   local function with_shell_hooks(cmd)
     return string.format(
@@ -10,7 +9,7 @@ return function(shell_hooks)
       string.escapeShellArg(". " .. shell_hooks .. "\n" .. cmd)
     )
   end
-  sh_settings.transforms = { with_shell_hooks }
+  sh.transforms = { with_shell_hooks }
   function os.write_file(opts, filename, content)
     local file = assert(io.open(filename, opts.append and "a" or "w"))
     file:write(content .. (opts.newline ~= false and "\n" or ""))
@@ -52,12 +51,12 @@ return function(shell_hooks)
       end
     end
     sh.rm("-rf", temp)
-    sh_settings.transforms = {}
+    sh.transforms = {}
     os.remove(shell_hooks)
     assert(ok, tostring(err))
   else
     sh.rm("-rf", temp)
-    sh_settings.transforms = {}
+    sh.transforms = {}
     os.remove(shell_hooks)
     error(tostring(err))
   end
