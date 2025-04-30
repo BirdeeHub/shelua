@@ -157,7 +157,7 @@ end
 local MT = {
 	__metatable = {
 		-- temporary "input" file
-		tempfile_path = '/tmp/sheluainput',
+		tempfile_path = os.tmpname(),
 		-- escape unnamed shell arguments
 		-- NOTE: k = v table keys are still not escaped, k = v table values always are
 		escape_args = false,
