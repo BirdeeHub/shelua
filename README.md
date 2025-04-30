@@ -146,12 +146,12 @@ local sh = require('sh')
 -- default values
 sh.escape_args = false
 sh.assert_zero = false
-sh.tempfile_path = os.tmpname()
 -- a list of functions to apply to the command before execution.
 -- the first one recieves the full command as a string,
 -- and returns a modified command string
 -- and then is passed to the next function in the list.
 sh.transforms = {}
+sh.proper_pipes = false
 ```
 
 You can make a local copy with different settings by calling the sh table as a function with no arguments.
@@ -174,8 +174,6 @@ print(require('sh')["false"]().__exitcode)
 -- would throw an error due to assert_zero = true
 print(newsh["false"]().__exitcode)
 ```
-
-If you wanted to do multi-threaded `lua`, each one should be given its own `tempfile_path` for example.
 
 ## For nix users
 
