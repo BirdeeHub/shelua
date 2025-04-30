@@ -1,6 +1,6 @@
 return function(tempdir)
   _G.sh = require("sh")
-  local sh_settings = getmetatable(_G.sh)
+  local sh_settings = sh()
   sh_settings.assert_zero = true
   sh_settings.tempfile_path = tempdir .. "/sheluainput"
   local shell = os.getenv("SHELL")
