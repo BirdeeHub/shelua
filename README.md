@@ -50,7 +50,7 @@ local u = sh.uniq(sh.sort({__input = words})) -- like $(echo ... | sort | uniq)
 print(u) -- prints "bar", "baz", "foo"
 ```
 
-Pipelines can be also written as chained function calls. Lua allows to omit parens, so the syntax really resembles unix shell:
+Pipelines can be also written as chained function calls. Lua allows you to omit parens, so the syntax really resembles unix shell:
 
 ``` lua
 -- $ ls /bin | grep $filter | wc -l
@@ -62,6 +62,20 @@ sh.ls('/bin'):grep(filter):wc('-l')
 -- chained syntax without parens
 sh.ls '/bin' : grep filter : wc '-l'
 ```
+
+## Command arguments as a table
+
+Key-value arguments can be also specified as argument table pairs:
+
+```lua
+require('sh')
+
+-- $ somecommand --format=long --interactive -u=0
+somecommand({format="long", interactive=true, u=0})
+```
+
+It becomes handy if you need to toggle or modify certain command line
+arguments without manually changing the arguments list.
 
 ## Partial commands and commands with tricky names or characters
 
@@ -93,19 +107,6 @@ the command was executed successfully.
 Since `f:close()` only returns exitcode and signal in Lua 5.2 or newer, this works differently in Lua 5.1 and current LuaJIT.
 
 It will detect the version and in versions older than 5.2 it will add `\necho __EXITCODE__$?`, and remove and parse the value for the code instead.
-
-## Command arguments as a table
-
-Key-value arguments can be also specified as argument table pairs:
-
-```lua
-require('sh')
-
--- $ somecommand --format=long --interactive -u=0
-somecommand({format="long", interactive=true, u=0})
-```
-It becomes handy if you need to toggle or modify certain command line
-argumnents without manually changing the argumnts list.
 
 ## Settings
 
