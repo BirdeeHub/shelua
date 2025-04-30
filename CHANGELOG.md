@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/BirdeeHub/shelua/compare/v1.0.5...v1.0.6) (2025-04-30)
+
+
+### Bug Fixes
+
+* **sh:** fix last refactor mistake ([2781333](https://github.com/BirdeeHub/shelua/commit/2781333ce9ca270c2dba2f6901c2181888e4fa17))
+
 ## [1.0.5](https://github.com/BirdeeHub/shelua/compare/v1.0.4...v1.0.5) (2025-04-30)
 
 
