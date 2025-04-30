@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/BirdeeHub/shelua/compare/v1.0.7...v1.1.0) (2025-04-30)
+
+
+### Features
+
+* **settings:** improved how settings and cloning works ([4f4ac04](https://github.com/BirdeeHub/shelua/commit/4f4ac04837e5a77f82ae70c14cb39da0cb96135e))
+
 ## [1.0.7](https://github.com/BirdeeHub/shelua/compare/v1.0.6...v1.0.7) (2025-04-30)
 
 
