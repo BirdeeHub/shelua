@@ -41,10 +41,10 @@
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
       mkBuildTest = lua: let
         luapath = (lua.withPackages (ps: with ps; [inspect (pkgs.shelua.override { luapkgs = ps; })])).interpreter;
-      in pkgs.runCommand ("shelua_package_test" + lua.luaAttr) {} ''
+      in pkgs.runCommand ("shelua_package_test-" + lua.luaAttr) {} ''
         echo 'package.path = package.path .. ";${./tests}/?.lua"; require("test")' | ${luapath} - > "$out"
       '';
-      mkCmdTest = lua: pkgs.runLuaCommand "testpkg" (lua.withPackages (ps: with ps; [inspect])).interpreter {
+      mkCmdTest = lua: pkgs.runLuaCommand ("runLuaCommand_test-" + lua.luaAttr) (lua.withPackages (ps: with ps; [inspect])).interpreter {
         nativeBuildInputs = [ pkgs.makeWrapper ];
         passthru = {
           testdata = [ "some" "values" ];
