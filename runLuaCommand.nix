@@ -24,7 +24,7 @@ in {
     assert(ok, val)
     ok, val = pcall(val, '$TEMPDIR2')
     assert(ok, val)
-    " | exec "$luaInterpreter" -
+    " | "$luaInterpreter" -
   '';
 } // lib.optionalAttrs (!derivationArgs ? meta) {
   pos =
