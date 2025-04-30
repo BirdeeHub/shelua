@@ -2,7 +2,6 @@ return function(shell_hooks)
   _G.sh = require("sh")
   local sh_settings = sh()
   sh_settings.assert_zero = true
-  sh_settings.tempfile_path = os.tmpname()
   local shell = os.getenv("SHELL")
   local function with_shell_hooks(cmd)
     return string.format(
