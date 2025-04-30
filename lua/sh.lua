@@ -70,7 +70,7 @@ string.escapeShellArg = escapeShellArg
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
 	if type(a) == 'boolean' and a then return k end
-	if type(a) == 'string' and #a >= 0 then return k .. "=" .. escapeShellArg(a) end
+	if type(a) == 'string' then return k .. "=" .. escapeShellArg(a) end
 	if type(a) == 'number' then return k .. '=' .. tostring(a) end
 	return nil
 end
