@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/BirdeeHub/shelua/compare/v1.1.0...v1.1.1) (2025-04-30)
+
+
+### Bug Fixes
+
+* **settings:** function form clone was wrong ([9639f64](https://github.com/BirdeeHub/shelua/commit/9639f648d7795778e7547c18ad84b930e88259d2))
+
 ## [1.1.0](https://github.com/BirdeeHub/shelua/compare/v1.0.7...v1.1.0) (2025-04-30)
 
 
