@@ -27,6 +27,11 @@ It is useful when you have a short build or wrapper script that needs to deal wi
 
 Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
 
+# ATTENTION:
+
+> [!WARNING] This library is still under development. It is not stable yet. Use at your own risk.
+> It may undergo major changes, such as to how settings are applied.
+
 ## Install
 
 via luarocks: `luarocks install shelua`
