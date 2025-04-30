@@ -39,8 +39,17 @@
     });
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
-    in {
-      default = pkgs.runLuaCommand "testpkg" (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter {
+      mkBuildTest = lua: let
+        luapath = (lua.withPackages (ps: with ps; [inspect (pkgs.shelua.override { luapkgs = ps; })])).interpreter;
+        testscript = pkgs.writeText ("luatestscript" + lua.luaAttr) /*lua*/''
+          require('sh')().assert_zero = true
+          package.path = package.path .. ";${./tests}/?.lua"
+          require("test")
+        '';
+      in pkgs.runCommand ("shelua_package_test" + lua.luaAttr) {} ''
+        cat ${testscript} | ${luapath} - > "$out"
+      '';
+      mkCmdTest = lua: pkgs.runLuaCommand "testpkg" (lua.withPackages (ps: with ps; [inspect])).interpreter {
         nativeBuildInputs = [ pkgs.makeWrapper ];
         passthru = {
           testdata = [ "some" "values" ];
@@ -68,6 +77,12 @@
         package.path = package.path .. ";${./tests}/?.lua"
         require("test")
       '';
-    });
+    in nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
+      (builtins.map (li: { name = "runLuaCommand-" + li.luaAttr; value = mkCmdTest li; }))
+      builtins.listToAttrs
+    ] // (nixpkgs.lib.pipe (with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 luajit ]) [
+      (builtins.map (li: { name = "withPackages-" + li.luaAttr; value = mkBuildTest li; }))
+      builtins.listToAttrs
+    ]));
   };
 }
