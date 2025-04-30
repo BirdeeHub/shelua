@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/BirdeeHub/shelua/compare/v1.0.4...v1.0.5) (2025-04-30)
+
+
+### Bug Fixes
+
+* **clone:** I broke clone ([8c14b6d](https://github.com/BirdeeHub/shelua/commit/8c14b6db6cd59f0783b1c0d9390b2b1bda7c3650))
+
 ## [1.0.4](https://github.com/BirdeeHub/shelua/compare/v1.0.3...v1.0.4) (2025-04-30)
 
 
