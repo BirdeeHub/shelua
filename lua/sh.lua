@@ -21,7 +21,7 @@ local function pre_5_2_sh(tmp, cmd, input, apply)
 	end
 	os.remove(tmp)
 	local exit
-	output = (output or ""):gsub("__EXITCODE__(%d*)\n?$", function(code)
+	output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
 		exit = tonumber(code)
 		return ""
 	end)
