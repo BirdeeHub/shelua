@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/BirdeeHub/shelua/compare/v1.0.2...v1.0.3) (2025-04-30)
+
+
+### Bug Fixes
+
+* **pre5.2:** full rn just incase ([bd3abdd](https://github.com/BirdeeHub/shelua/commit/bd3abdd2cb25c07d3292b5917b07c1bc226ebee4))
+
 ## [1.0.2](https://github.com/BirdeeHub/shelua/compare/v1.0.1...v1.0.2) (2025-04-29)
 
 
