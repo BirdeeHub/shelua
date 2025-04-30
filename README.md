@@ -5,6 +5,28 @@
 
 Tiny library for unix shell scripting with Lua (inspired by zserge/luash).
 
+`luash` is interesting, but it modifies `_G` in an extreme way.
+
+This makes it very difficult to use as part of anything else.
+
+I localized `luash` to the variable itself, improved escaping,
+and added some settings that proved useful to me.
+
+Due to the settings being localized to the variable as well, you can have multiple of them, with different [settings](#settings).
+
+It also contains a workaround to make the error codes still work prior to `lua 5.2`.
+
+It works with any unix-like shell such as `bash`, `zsh`, and `dash`/`sh`, but it will not work with `fish`, `nushell`, `cmd` or `powershell`
+
+It also exports a [small nix helper](#in-addition-to-the-library) that allows you
+to use `shelua` to write `nix` derivations in `lua` instead of `bash`.
+
+It is `pkgs.runCommand` except it is `pkgs.runLuaCommand` because the command is in `lua`.
+
+It is useful when you have a short build or wrapper script that needs to deal with a lot of structured data.
+
+Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
+
 ## Install
 
 via luarocks: `luarocks install shelua`
@@ -139,6 +161,8 @@ print(require('sh')["false"]().__exitcode)
 -- would throw an error due to assert_zero = true
 newsh["false"]()
 ```
+
+If you wanted to do multi-threaded `lua`, each one can be given its own `tempfile_path` for example.
 
 ## For nix users
 
