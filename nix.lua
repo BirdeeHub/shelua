@@ -23,7 +23,7 @@ return function(shell_hooks)
     return content
   end
   function os.readable(filename)
-    if filename then
+    if type(filename) == "string" then
       local file = io.open(filename, "r")  -- Try to open the file in read mode
       if file then
         file:close()  -- Close the file if it exists
