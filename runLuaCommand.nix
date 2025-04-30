@@ -12,17 +12,16 @@ in {
   ];
   passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
+    LUA_SHELL_HOOKS=$(mktemp)
     TEMPDIR=$(mktemp -d)
     mkdir -p "$TEMPDIR"
-    TEMPDIR2=$(mktemp -d)
-    mkdir -p "$TEMPDIR2"
-    declare -f > "$TEMPDIR2/shell_hooks.sh"
+    declare -f > "$LUA_SHELL_HOOKS"
     echo "_G.temp = '$TEMPDIR'
     _G.out = '${placeholder "out"}'
     package.preload.sh = function() return dofile('${./lua/sh.lua}') end
     local ok, val = pcall(dofile, '${./nix.lua}')
     assert(ok, val)
-    ok, val = pcall(val, '$TEMPDIR2')
+    ok, val = pcall(val, '$LUA_SHELL_HOOKS')
     assert(ok, val)
     " | "$luaInterpreter" -
   '';

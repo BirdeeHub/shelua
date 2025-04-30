@@ -1,14 +1,14 @@
-return function(tempdir)
+return function(shell_hooks)
   _G.sh = require("sh")
   local sh_settings = sh()
   sh_settings.assert_zero = true
-  sh_settings.tempfile_path = tempdir .. "/sheluainput"
+  sh_settings.tempfile_path = temp .. "/sheluainput"
   local shell = os.getenv("SHELL")
   local function with_shell_hooks(cmd)
     return string.format(
       "%s -c %s",
       string.escapeShellArg(shell),
-      string.escapeShellArg(". " .. tempdir .. "/shell_hooks.sh\n" .. cmd)
+      string.escapeShellArg(". " .. shell_hooks .. "\n" .. cmd)
     )
   end
   sh_settings.transforms = { with_shell_hooks }
@@ -53,11 +53,11 @@ return function(tempdir)
       end
     end
     sh.rm("-rf", temp)
-    sh.rm("-rf", tempdir)
+    sh.rm("-rf", shell_hooks)
     assert(ok, tostring(err))
   else
     sh.rm("-rf", temp)
-    sh.rm("-rf", tempdir)
+    sh.rm("-rf", shell_hooks)
     error(tostring(err))
   end
 end
