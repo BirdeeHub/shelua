@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/BirdeeHub/shelua/compare/v1.0.3...v1.0.4) (2025-04-30)
+
+
+### Bug Fixes
+
+* **tmpfile:** use os.tmpname dont hardcode ([b26a59c](https://github.com/BirdeeHub/shelua/commit/b26a59c4b454ba9f845012dd8bad269e1ad8e190))
+
 ## [1.0.3](https://github.com/BirdeeHub/shelua/compare/v1.0.2...v1.0.3) (2025-04-30)
 
 
