@@ -1,4 +1,13 @@
-{ lib, stdenv, n2l, ... }: name: interpreter: env: text:
+{ lib
+, stdenv
+, n2l ? import (builtins.fetchGit (let
+  rev = (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.n2l.locked.rev;
+in {
+    url = "https://github.com/BirdeeHub/nixToLua.git";
+    inherit rev;
+  }))
+, ...
+}: name: interpreter: env: text:
 stdenv.mkDerivation (finalAttrs: let
   derivationArgs = if lib.isFunction env then env n2l else env;
 in {
