@@ -219,7 +219,7 @@ MT.__call = function(self, cmd, ...)
 		return setmetatable({}, newMT)
 	elseif type(cmd) == 'function' then
 		local newMT = deepcopy(MT)
-		newMT.__metatable = cmd(self)
+		newMT.__metatable = cmd(deepcopy(getmetatable(self)))
 		return setmetatable({}, newMT)
 	else
 		return command(self, cmd, ...)
