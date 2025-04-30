@@ -69,6 +69,8 @@ string.escapeShellArg = escapeShellArg
 
 -- converts key and it's argument to "-k" or "-k=v" or just ""
 local function arg(k, a)
+	k = '-' .. k
+	if #k > 1 then k = '-' .. k end
 	if type(a) == 'boolean' and a then return k end
 	if type(a) == 'string' then return k .. "=" .. escapeShellArg(a) end
 	if type(a) == 'number' then return k .. '=' .. tostring(a) end
@@ -95,9 +97,7 @@ local function flatten(input, opts)
 			if k == '__input' then
 				result.input = (result.input or "") .. v
 			elseif not keys[k] and k:sub(1, 2) ~= '__' then
-				local key = '-' .. k
-				if #k > 1 then key = '-' .. key end
-				key = arg(key, v)
+				local key = arg(k, v)
 				if key then
 					table.insert(result.args, key)
 				end
