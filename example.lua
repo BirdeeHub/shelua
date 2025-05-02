@@ -32,3 +32,25 @@ print(greet('foo'))
 print(sh('type')('ls'))
 print(sh 'type' 'ls')
 
+-- changing settings for sh variable
+
+sh.escape_args = true
+print(sh.echo 'Hello World' :sed "s/Hello World/Goodbye Universe/g")
+sh.escape_args = false
+
+-- cloning sh with new settings, and "proper_pipes" setting (and others)
+
+local nsh = sh({
+  proper_pipes = true,
+  escape_args = true,
+  assert_zero = true,
+  transforms = {
+    function(cmd)
+      print(cmd)
+      return cmd
+    end
+  }
+})
+print(nsh.echo 'Hello world' :sed "s/Hello/Goodbye/g")
+print(nsh.sed(nsh.echo 'Hello world', nsh.echo 'Hello world', "s/Hello/Goodbye/g"))
+print(nsh.echo 'Hello World' :sed(nsh.echo 'Hello World', nsh.echo 'Hello World' :sed(nsh.echo 'Hello World', "s/Hello/Goodbye/g"), "s/World/Universe/g"))
