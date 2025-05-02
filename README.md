@@ -64,10 +64,6 @@ be concatenated.
 The each command function returns a structure that contains the `__input`
 field, so nested functions can be used to make a pipeline.
 
-Note that the commands are not running in parallel (because Lua can only handle
-one I/O loop at a time). So the inner-most command is executed, its output is
-read, the the outer command is execute with the output redirected etc.
-
 ``` lua
 local sh = require('sh')
 
@@ -88,6 +84,22 @@ sh.ls('/bin'):grep(filter):wc('-l')
 -- chained syntax without parens
 sh.ls '/bin' : grep filter : wc '-l'
 ```
+
+Note that the commands are not running in parallel (because Lua can only handle
+one I/O loop at a time). So the inner-most command is executed, its output is
+read, the the outer command is execute with the output redirected etc.
+
+However, `shelua` also offers a `proper_pipes` [setting](#settings).
+
+It will cause the chains you make to be piped directly in bash!
+Accessing a returned values `__exitcode`, `__signal` and `__input` fields,
+or calling `tostring()` or `print()` will cause your value to be "resolved".
+
+This means the chain up to that point will be translated to a bash pipeline and ran at that point.
+
+It also means that after a chain has been resolved,
+you no longer can get the values of intermediate values in the chain,
+so this is not the default behavior.
 
 ## Command arguments as a table
 
@@ -143,15 +155,18 @@ If you assign a value to the sh table, it will set the value in the metatable.
 
 ```lua
 local sh = require('sh')
+
 -- default values
-sh.escape_args = false
-sh.assert_zero = false
--- a list of functions to apply to the command before execution.
--- the first one recieves the full command as a string,
--- and returns a modified command string
--- and then is passed to the next function in the list.
-sh.transforms = {}
-sh.proper_pipes = false
+-- escape unnamed shell arguments
+-- NOTE: k = v table keys are still not escaped, k = v table values always are
+sh.escape_args = false,
+-- Assert that exit code is 0 or throw and error
+sh.assert_zero = false,
+-- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
+sh.proper_pipes = false,
+-- a list of functions to run in order on the command before running it.
+-- each one recieves the final command and is to return a string representing the new one
+sh.transforms = {},
 ```
 
 You can make a local copy with different settings by calling the sh table as a function with no arguments.
