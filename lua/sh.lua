@@ -1,9 +1,74 @@
+---Will contain either s, a string,
+---or B, an input command string
+---@class Shelua.PipeInput
+---string stdin to combine
+---@field s? string
+---cmd to combine
+---@field c? string
+
+---@class Shelua.Repr
+---escapes a string for the shell
+---@field escape fun(arg: any): string
+---turns table form args from table keys and values into flags
+---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string|nil
+---adds args to the command
+---@field add_args fun(cmd: string, args: string[]): string
+---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
+---called when proper_pipes is false
+---@field single_stdin fun(opts: SheluaOpts, cmd: string, input: string?): (string, any?)
+---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
+---called when proper_pipes is true
+---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): string
+---runs the command and returns the result and exit code and signal
+---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+---runs the command and returns the result and exit code and signal
+---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+
+---@class SheluaOpts
+---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
+---@field proper_pipes? boolean
+---Assert that exit code is 0 or throw and error
+---@field assert_zero? boolean
+-- also escape unnamed shell arguments
+---@field escape_args? boolean
+-- a list of functions to run in order on the command before running it.
+-- each one recieves the final command and is to return a string representing the new one
+---@field transforms? (fun(cmd: string): string)[]
+---name of the repr implementation to choose
+---@field shell? string
+---@field repr? Shelua.Repr
+
 local is_5_2_plus = (function()
 	local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
 	major, minor = tonumber(major), tonumber(minor)
 	return major > 5 or (major == 5 and minor >= 2)
 end)()
 
+---@param shell string
+---@param err string
+---@return fun(): nil
+local mkErrFn = function(shell, err)
+	return function()
+		error("Shelua Repr Error: " .. tostring(err) .. " function required for shell: " .. tostring(shell or "posix"))
+	end
+end
+
+---@param t table
+---@param default any
+---@vararg any
+---@return any
+local function tbl_get(t, default, ...)
+	if #{ ... } == 0 then return default end
+	for _, key in ipairs({ ... }) do
+		if type(t) ~= "table" then return default end
+		t = t[key]
+	end
+	return t
+end
+
+---@param orig any
+---@param seen? table
+---@return any
 local function deepcopy(orig, seen)
 	seen = seen or {}
 	-- memoize to prevent cycles
@@ -29,78 +94,110 @@ local function deepcopy(orig, seen)
 	return copy
 end
 
-local function simple_stdin(tmp, cmd, input)
-	if input then
-		local f = io.open(tmp, 'w')
-		if f then
-			f:write(input)
-			f:close()
-			cmd = cmd .. ' <' .. tmp
+---@type Shelua.Repr
+local posix = {
+	-- nixpkgs.lib.escapeShellArg in lua
+	escape = function(arg)
+		local str = tostring(arg)
+		if str:match("^[%w,._+:@%%/-]+$") == nil then
+			return string.format("'%s'", str:gsub("'", "'\\''"))
+		else
+			return str
 		end
-	end
-	return cmd
-end
+	end,
+	add_args = function(cmd, args)
+		return cmd .. " " .. table.concat(args, " ")
+	end,
+	-- converts key and it's argument to "-k" or "-k=v" or just ""
+	arg_tbl = function(opts, k, a)
+		k = (#k > 1 and '--' or '-') .. k
+		if type(a) == 'boolean' and a then return k end
+		if type(a) == 'string' then
+			return k .. "=" .. tbl_get(opts, mkErrFn(opts.shell, "escape"), "repr", opts.shell or "posix", "escape")(a)
+		end
+		if type(a) == 'number' then return k .. '=' .. tostring(a) end
+		return nil
+	end,
+	single_stdin = function(opts, cmd, input)
+		local tmp
+		if input then
+			tmp = os.tmpname()
+			local f = io.open(tmp, 'w')
+			if f then
+				f:write(input)
+				f:close()
+				cmd = cmd .. ' <' .. tmp
+			end
+		end
+		return cmd, tmp
+	end,
+	post_5_2_run = function(opts, cmd, tmp)
+		local p = io.popen(cmd, 'r')
+		local output, exit, status
+		if p then
+			output = p:read('*a')
+			_, exit, status = p:close()
+		end
+		pcall(os.remove, tmp)
 
-local function post_5_2_sh(cmd, tmp)
-	local p = io.popen(cmd, 'r')
-	local output, exit, status
-	if p then
-		output = p:read('*a')
-		_, exit, status = p:close()
-	end
-	pcall(os.remove, tmp)
-
-	return {
-		__input = output,
-		__exitcode = exit == 'exit' and status or 127,
-		__signal = exit == 'signal' and status or 0,
-	}
-end
-
-local function pre_5_2_sh(cmd, tmp)
-	local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
-	local output
-	if p then
-		output = p:read('*a')
-		p:close()
-	end
-	pcall(os.remove, tmp)
-	local exit
-	output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
-		exit = tonumber(code)
-		return ""
-	end)
-	return {
-		__input = output,
-		__exitcode = exit or 127,
-		__signal = (exit and exit > 128) and (exit - 128) or 0
-	}
-end
-
--- nixpkgs.lib.escapeShellArg in lua
-function string.escapeShellArg(arg)
-	local str = tostring(arg)
-	if str:match("^[%w,._+:@%%/-]+$") == nil then
-		return string.format("'%s'", str:gsub("'", "'\\''"))
-	else
-		return str
-	end
-end
-
--- converts key and it's argument to "-k" or "-k=v" or just ""
-local function arg(k, a)
-	k = (#k > 1 and '--' or '-') .. k
-	if type(a) == 'boolean' and a then return k end
-	if type(a) == 'string' then return k .. "=" .. string.escapeShellArg(a) end
-	if type(a) == 'number' then return k .. '=' .. tostring(a) end
-	return nil
-end
+		return {
+			__input = output,
+			__exitcode = exit == 'exit' and status or 127,
+			__signal = exit == 'signal' and status or 0,
+		}
+	end,
+	pre_5_2_run = function(opts, cmd, tmp)
+		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
+		local output
+		if p then
+			output = p:read('*a')
+			p:close()
+		end
+		pcall(os.remove, tmp)
+		local exit
+		output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
+			exit = tonumber(code)
+			return ""
+		end)
+		return {
+			__input = output,
+			__exitcode = exit or 127,
+			__signal = (exit and exit > 128) and (exit - 128) or 0
+		}
+	end,
+	concat_cmd = function(opts, cmd, input)
+		if #input == 1 then
+			local v = input[1]
+			if v.s then
+				local esc = tbl_get(opts, mkErrFn(opts.shell, "tbl_get"), "repr", opts.shell or "posix", "escape")(v.s)
+				return "echo " .. esc .. " | " .. cmd
+			else
+				return v.c .. " | " .. cmd
+			end
+		elseif #input > 1 then
+			for i = 1, #input do
+				local v = input[i]
+				if v.s then
+					input[i] = "echo " .. tbl_get(opts, mkErrFn(opts.shell, "tbl_get"), "repr", opts.shell or "posix", "escape")(v.s)
+				elseif v.c then
+					---@diagnostic disable-next-line: assign-type-mismatch
+					input[i] = v.c
+				end
+			end
+			return "{ " .. table.concat(input, " ; ") .. " ; } | " .. cmd
+		else
+			return cmd
+		end
+	end,
+}
 
 local unresolved = {} -- store unresolved results here, with unresolved result table as key
 
 -- get associated { cmd, inputs } from unresolved table.
 -- recursively resolve inputs list, which can contain strings, or other tables to call resolve on
 -- should return final command string
+---@param tores table
+---@param opts SheluaOpts
 local function resolve(tores, opts)
 	local val = unresolved[tores]
 	if not val then
@@ -110,21 +207,17 @@ local function resolve(tores, opts)
 	local input = {}
 	for _, v in ipairs(val.input or {}) do
 		if type(v) == "string" then
-			table.insert(input, "echo " .. string.escapeShellArg(v))
+			table.insert(input, { s = v })
 		elseif type(v) == "table" then
-			table.insert(input, resolve(v, opts))
+			table.insert(input, { c = resolve(v, opts) })
 		end
 	end
-	if #input == 0 then
-		return val.cmd
-	elseif #input == 1 then
-		return input[1] .. " | " .. val.cmd
-	elseif #input > 1 then
-		return "{ " .. table.concat(input, " ; ") .. " ; } | " .. val.cmd
-	end
+	return tbl_get(opts, mkErrFn(opts.shell, "concat_cmd"), "repr", opts.shell or "posix", "concat_cmd")(opts, val.cmd, input)
 end
 
 -- converts nested tables into a flat list of arguments and concatenated input
+---@param input table
+---@param opts SheluaOpts
 local function flatten(input, opts)
 	local result = { args = {}, input = {} }
 
@@ -145,14 +238,16 @@ local function flatten(input, opts)
 					f(v)
 				end
 			else
-				table.insert(result.args, opts.escape_args and string.escapeShellArg(v) or v)
+				table.insert(result.args,
+					opts.escape_args and
+					tbl_get(opts, mkErrFn(opts.shell, "escape"), "repr", opts.shell or "posix", "escape")(v) or v)
 			end
 		end
 		for k, v in pairs(t) do
 			if k == '__input' then
 				table.insert(result.input, v)
 			elseif not keys[k] and k:sub(1, 2) ~= '__' then
-				local key = arg(k, v)
+				local key = tbl_get(opts, mkErrFn(opts.shell, "arg_tbl"), "repr", opts.shell or "posix", "arg_tbl")(opts, k, v)
 				if key then
 					table.insert(result.args, key)
 				end
@@ -166,18 +261,24 @@ end
 
 -- returns a function that executes the command with given args and returns its
 -- output, exit status etc
+---@param self any
+---@param cmdstr any
+---@vararg any
+---@return function
 local function command(self, cmdstr, ...)
 	local preargs = flatten({ ... }, getmetatable(self))
 	return function(...)
 		local shmt = getmetatable(self)
 		local args = flatten({ ... }, shmt)
 		local cmd = type(cmdstr) == "string" and cmdstr or error("Shell commands must be strings!")
+		local fargs = {}
 		for _, v in ipairs(preargs.args) do
-			cmd = cmd .. ' ' .. v
+			table.insert(fargs, v)
 		end
 		for _, v in ipairs(args.args) do
-			cmd = cmd .. ' ' .. v
+			table.insert(fargs, v)
 		end
+		cmd = tbl_get(shmt, mkErrFn(shmt.shell, "add_args"), "repr", shmt.shell or "posix", "add_args")(cmd, fargs)
 		local apply = function(c)
 			local res = c
 			for _, f in ipairs(shmt.transforms or {}) do
@@ -195,17 +296,20 @@ local function command(self, cmdstr, ...)
 				table.insert(input, v)
 			end
 		else
-			input = (#preargs.input > 0 or #args.input > 0) and table.concat(preargs.input or {}) .. table.concat(args.input or {}) or nil
+			input = (#preargs.input > 0 or #args.input > 0) and
+				table.concat(preargs.input or {}) .. table.concat(args.input or {}) or nil
 		end
 		local t = {}
 		if shmt.proper_pipes then
 			unresolved[t] = { cmd = cmd, input = input }
 		elseif is_5_2_plus then
-			local tmp = os.tmpname()
-			t = post_5_2_sh(apply(simple_stdin(tmp, cmd, input)), tmp)
+			local tmp
+			cmd, tmp = tbl_get(shmt, mkErrFn(shmt.shell, "single_stdin"), "repr", shmt.shell or "posix", "single_stdin")(shmt, cmd, input)
+			t = tbl_get(shmt, mkErrFn(shmt.shell, "post_5_2_run"), "repr", shmt.shell or "posix", "post_5_2_run")(shmt, apply(cmd), tmp)
 		else
-			local tmp = os.tmpname()
-			t = pre_5_2_sh(apply(simple_stdin(tmp, cmd, input)), tmp)
+			local tmp
+			cmd, tmp = tbl_get(shmt, mkErrFn(shmt.shell, "single_stdin"), "repr", shmt.shell or "posix", "single_stdin")(shmt, cmd, input)
+			t = tbl_get(shmt, mkErrFn(shmt.shell, "pre_5_2_run"), "repr", shmt.shell or "posix", "pre_5_2_run")(shmt, apply(cmd), tmp)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
@@ -220,15 +324,17 @@ local function command(self, cmdstr, ...)
 					cmd = resolve(t, shmt)
 					local res
 					if is_5_2_plus then
-						res = post_5_2_sh(apply(cmd))
+						res = tbl_get(shmt, mkErrFn(shmt.shell, "post_5_2_run"), "repr", shmt.shell or "posix", "post_5_2_run")(shmt, apply(cmd))
 					else
-						res = pre_5_2_sh(apply(cmd))
+						res = tbl_get(shmt, mkErrFn(shmt.shell, "pre_5_2_run"), "repr", shmt.shell or "posix", "pre_5_2_run")(shmt, apply(cmd))
 					end
 					for k, v in pairs(res or {}) do
 						rawset(t, k, v)
 					end
 					if shmt.assert_zero and rawget(t, "__exitcode") ~= 0 then
-						error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. rawget(t, "__exitcode"))
+						error("Command " ..
+							tostring(cmd) ..
+							" exited with non-zero status: " .. rawget(t, "__exitcode"))
 					end
 					return rawget(t, c)
 				else
@@ -245,6 +351,7 @@ local function command(self, cmdstr, ...)
 end
 
 local MT = {
+	---@type SheluaOpts
 	__metatable = {
 		-- escape unnamed shell arguments
 		-- NOTE: k = v table keys are still not escaped, k = v table values always are
@@ -256,6 +363,8 @@ local MT = {
 		-- a list of functions to run in order on the command before running it.
 		-- each one recieves the final command and is to return a string representing the new one
 		transforms = {},
+		shell = "posix",
+		repr = { posix = posix }
 	},
 	-- set hook for index as shell command
 	__index = function(self, cmd)
@@ -270,6 +379,10 @@ local MT = {
 -- or no arguments to return clone
 -- or first arg as table to tbl_extend settings then clone
 -- or first arg as function that recieves old settings to set new settings and clone
+---@param self table
+---@param cmd nil | table | fun(opts: SheluaOpts): table | string
+---@vararg any
+---@return table | any
 MT.__call = function(self, cmd, ...)
 	if cmd == nil then
 		local newMT = deepcopy(MT)

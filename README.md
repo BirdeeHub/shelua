@@ -128,11 +128,6 @@ local gittag = sh('git', 'tag') -- gittag(...) is same as sh.git('tag', ...)
 gittag('-l') -- list all git tags
 ```
 
-`require`ing this library also will add the `string.escapeShellArg` function,
-allowing you to use it on any string `("like so"):escapeShellArg()`.
-
-`string.escapeShellArg` receives a string and returns a string escaped for use in shell commands.
-
 ## Exit status and signal values
 
 Each command function returns a table with `__exitcode` and `__signal` fields.
@@ -155,14 +150,18 @@ local sh = require('sh')
 -- default values
 -- escape unnamed shell arguments
 -- NOTE: k = v table keys are still not escaped, k = v table values always are
-sh.escape_args = false,
+sh.escape_args = false
 -- Assert that exit code is 0 or throw and error
-sh.assert_zero = false,
+sh.assert_zero = false
 -- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
-sh.proper_pipes = false,
+sh.proper_pipes = false
 -- a list of functions to run in order on the command before running it.
 -- each one recieves the final command and is to return a string representing the new one
-sh.transforms = {},
+sh.transforms = {}
+---Allows the definition of new shell backends.
+---@type table<string, Shelua.Repr>
+sh.repr = { posix = { "..." } }
+sh.shell = "posix"
 ```
 
 You can make a local copy with different settings by calling the sh table as a function with no arguments.
@@ -225,8 +224,6 @@ You should provide the interpreter path via something like this to get the most 
 
 - An `sh` global will be added containing `require('sh')`
 
-- That `require('sh')` will also add the `string.escapeShellArg` function.
-
 - `drvArgs.passthru` will be written verbatim to the `drv` global variable in lua,
 	minus any nix functions, achieved via the `n2l` library mentioned above.
 	This will apply even if you add them later via `overrideAttrs`
@@ -234,6 +231,10 @@ You should provide the interpreter path via something like this to get the most 
 - `$out` for the derivation will have an associated `out` global in lua
 
 - A temporary directory will be created for use, with its path given by the `temp` global
+
+- `string.escapeShellArg` function will be added,
+	allowing you to use it on any string `("like so"):escapeShellArg()`.
+	`string.escapeShellArg` is `pkgs.lib.escapeShellArg` in lua.
 
 - `os.read_file(filename) -> string` and `os.readable(filename) -> boolean` will be added
 
