@@ -28,7 +28,6 @@ print(greet('world'))
 print(greet('foo'))
 
 -- sh module itself can be called as a function
--- it's an alias for sh.command()
 print(sh('type')('ls'))
 print(sh 'type' 'ls')
 
