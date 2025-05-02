@@ -195,7 +195,7 @@ local function command(self, cmdstr, ...)
 				table.insert(input, v)
 			end
 		else
-			input = (preargs.input or args.input) and table.concat(preargs.input or {}) .. table.concat(args.input or {}) or nil
+			input = (#preargs.input > 0 or #args.input > 0) and table.concat(preargs.input or {}) .. table.concat(args.input or {}) or nil
 		end
 		local t = {}
 		if shmt.proper_pipes then
