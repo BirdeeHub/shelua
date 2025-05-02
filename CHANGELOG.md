@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/BirdeeHub/shelua/compare/v1.2.1...v1.3.0) (2025-05-02)
+
+
+### Features
+
+* **repr_options:** allow different backends to be added ([c9cb916](https://github.com/BirdeeHub/shelua/commit/c9cb916b800ad8fa3ae6c9073a82bb5df1d1facb))
+* **repr_options:** allow different backends to be added ([e89caaa](https://github.com/BirdeeHub/shelua/commit/e89caaa7ee30e84e80074b92e33c58087535ce01))
+
 ## [1.2.1](https://github.com/BirdeeHub/shelua/compare/v1.2.0...v1.2.1) (2025-05-02)
 
 
