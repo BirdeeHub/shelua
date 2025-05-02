@@ -33,13 +33,11 @@ print(sh('type')('ls'))
 print(sh 'type' 'ls')
 
 -- changing settings for sh variable
-
 sh.escape_args = true
 print(sh.echo 'Hello World' :sed "s/Hello World/Goodbye Universe/g")
 sh.escape_args = false
 
 -- cloning sh with new settings, and "proper_pipes" setting (and others)
-
 local nsh = sh({
   proper_pipes = true,
   escape_args = true,
