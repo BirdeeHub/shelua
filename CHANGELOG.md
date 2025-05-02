@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/BirdeeHub/shelua/compare/v1.1.1...v1.2.0) (2025-05-02)
+
+
+### Features
+
+* **pipes:** proper_pipes setting ([cb38130](https://github.com/BirdeeHub/shelua/commit/cb3813059460067ddad12749540c766ea41142a2))
+* **pipes:** proper_pipes setting ([3da7bc8](https://github.com/BirdeeHub/shelua/commit/3da7bc871e4c29d38ccef57eede7114260102676))
+
 ## [1.1.1](https://github.com/BirdeeHub/shelua/compare/v1.1.0...v1.1.1) (2025-04-30)
 
 
