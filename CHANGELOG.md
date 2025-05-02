@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/BirdeeHub/shelua/compare/v1.2.0...v1.2.1) (2025-05-02)
+
+
+### Bug Fixes
+
+* **sh:** unnecessary stdin pipes bug ([3b200da](https://github.com/BirdeeHub/shelua/commit/3b200daafac5d121b4c1aa419b42b2859194a6a8))
+
 ## [1.2.0](https://github.com/BirdeeHub/shelua/compare/v1.1.1...v1.2.0) (2025-05-02)
 
 
