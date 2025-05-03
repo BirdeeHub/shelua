@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/BirdeeHub/shelua/compare/v1.3.0...v1.3.1) (2025-05-03)
+
+
+### Bug Fixes
+
+* **feature:** concat_cmd repr fn can now also return a message like single_stdin ([c85811e](https://github.com/BirdeeHub/shelua/commit/c85811e22d625f4f6d6d6e4042a4d524b06c71b3))
+
 ## [1.3.0](https://github.com/BirdeeHub/shelua/compare/v1.2.1...v1.3.0) (2025-05-02)
 
 
