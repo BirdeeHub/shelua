@@ -36,7 +36,7 @@
 ---@field transforms? (fun(cmd: string): string)[]
 ---name of the repr implementation to choose
 ---@field shell? string
----@field repr? Shelua.Repr
+---@field repr? table<string, Shelua.Repr>
 
 local is_5_2_plus = (function()
 	local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
