@@ -177,7 +177,7 @@ Or you can call it with a function that receives the old settings table and retu
 ```lua
 -- these 4 forms are equivalent
 local nsh = require('sh')()
-newsh.assert_zero = true
+nsh.assert_zero = true
 -- or
 local newsh = require('sh')()
 getmetatable(newsh).assert_zero = true
