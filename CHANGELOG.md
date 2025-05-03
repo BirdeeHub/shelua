@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/BirdeeHub/shelua/compare/v1.3.1...v1.3.2) (2025-05-03)
+
+
+### Bug Fixes
+
+* **feature:** allowed pre and post 5.2 run repr functions to return extra cmd results ([f046876](https://github.com/BirdeeHub/shelua/commit/f04687600451ac4c3f99f7d607386867d0087285))
+
 ## [1.3.1](https://github.com/BirdeeHub/shelua/compare/v1.3.0...v1.3.1) (2025-05-03)
 
 
