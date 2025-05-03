@@ -151,7 +151,6 @@ that pipes them into the command, and then return that string, if there are any 
 
 Its result will be provided to the same run function as `single_stdin` would have, either `pre_5_2_run` or `post_5_2_run`,
 after adding the newly resolved values to the command result being resolved.
-However `concat_cmd` cannot return an optional second argument.
 
 ```lua
 	---Will contain either `s`, a plain string,
