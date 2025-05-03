@@ -8,7 +8,8 @@ and provides a built in representation for `posix` shells.
 
 These functions define the actual connective characters that join things together, after shelua has taken care of the structuring for you.
 
-To define and use it, add the table to the repr table in the `SheluaOpts` table. Then set the `shell` setting to the name of its key in that table.
+To define and use a new representation, add the table to the `repr` table in the `SheluaOpts` table.
+Then set the `shell` setting to the name of its key in that table.
 
 The first 3 functions to define if necessary are hopefully fairly self explanatory.
 
@@ -193,6 +194,6 @@ and the representation defines the actual string of characters or actions to res
 
 In this way, shelua may be used with ANY shell, provided you are willing to provide new versions of the above functions that do not work for that shell.
 
-For example, Fish will need to define a `escape` and a `concat_cmd` function.
+For example, Fish will need to define a new `escape` and a new `concat_cmd` function.
 
 When you don't provide a method for a representation, the current `posix` representation will be used by default.
