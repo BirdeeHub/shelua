@@ -16,7 +16,9 @@ Due to the settings being localized to the variable as well, you can have multip
 
 It also contains a workaround to make the error codes still work prior to `lua 5.2`.
 
-It works with any unix-like shell such as `bash`, `zsh`, and `dash`/`sh`, but it will not work with `fish`, `nushell`, `cmd` or `powershell`
+It works with any "posix-enough" shell by default such as `bash`, `zsh`, and `dash`/`sh`.
+
+But it will not work by default with `fish`, `nushell`, `cmd` or `powershell` unless you define a representation for that shell.
 
 It also exports a [small nix helper](#in-addition-to-the-library) that allows you
 to use `shelua` to write `nix` derivations in `lua` instead of `bash`.
@@ -164,11 +166,13 @@ sh.repr = { posix = { "..." } }
 sh.shell = "posix"
 ```
 
+For info on `sh.repr`, see [Shell Representation docs](./REPR.md)
+
 You can make a local copy with different settings by calling the sh table as a function with no arguments.
 
 Or you can call it with a table to modify the existing settings and return a new sh table.
 
-Or you can call it with a function that recieves the old settings table and returns a new one.
+Or you can call it with a function that receives the old settings table and returns a new one.
 
 ```lua
 -- these 3 forms are equivalent
