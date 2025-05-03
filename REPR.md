@@ -157,7 +157,7 @@ However `concat_cmd` cannot return an optional second argument.
 		if #input == 1 then
 			local v = input[1]
 			if v.s then
-				local esc = tbl_get(opts, opts.repr[opts.shell or "posix"].escape(v.s)
+				local esc = opts.repr[opts.shell or "posix"].escape(v.s)
 				return "echo " .. esc .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
