@@ -150,6 +150,13 @@ after adding the newly resolved values to the command result being resolved.
 However `concat_cmd` cannot return an optional second argument.
 
 ```lua
+	---Will contain either `s`, a plain string,
+	---or `c`, an input command string
+	---@class Shelua.PipeInput
+	---string stdin to combine
+	---@field s? string
+	---cmd to combine
+	---@field c? string
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true
 	---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): string
@@ -176,20 +183,13 @@ However `concat_cmd` cannot return an optional second argument.
 			return cmd
 		end
 	end,
-	---Will contain either `s`, a plain string,
-	---or `c`, an input command string
-	---@class Shelua.PipeInput
-	---string stdin to combine
-	---@field s? string
-	---cmd to combine
-	---@field c? string
 }
 ```
 
-Thats an entire shell backend!
+That's an entire shell backend!
 
-As you can see, shelua provides the structures you will need to resolve,
-and the representation defines the actual string of characters or actions to resolve to!
+As you can see, shelua provides the structures and commands you will need to resolve,
+and the representation defines the actual characters used to combine them into the command.
 
 In this way, shelua may be used with ANY shell, provided you are willing to provide new versions of the above functions that do not work for that shell.
 
