@@ -44,15 +44,6 @@ local is_5_2_plus = (function()
 	return major > 5 or (major == 5 and minor >= 2)
 end)()
 
----@param shell string
----@param err string
----@return fun(): nil
-local mkErrFn = function(shell, err)
-	return function()
-		error("Shelua Repr Error: " .. tostring(err) .. " function required for shell: " .. tostring(shell or "posix"))
-	end
-end
-
 ---@param t table
 ---@param default any
 ---@vararg any
@@ -64,6 +55,15 @@ local function tbl_get(t, default, ...)
 		t = t[key]
 	end
 	return t
+end
+
+---@param opts SheluaOpts
+---@param attr string
+---@return function
+local get_repr_fn = function (opts, attr)
+	return tbl_get(opts, function()
+		error("Shelua Repr Error: " .. tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
+	end, "repr", opts.shell or "posix", attr)
 end
 
 ---@param orig any
@@ -113,7 +113,7 @@ local posix = {
 		k = (#k > 1 and '--' or '-') .. k
 		if type(a) == 'boolean' and a then return k end
 		if type(a) == 'string' then
-			return k .. "=" .. tbl_get(opts, mkErrFn(opts.shell, "escape"), "repr", opts.shell or "posix", "escape")(a)
+			return k .. "=" .. get_repr_fn(opts, "escape")(a)
 		end
 		if type(a) == 'number' then return k .. '=' .. tostring(a) end
 		return nil
@@ -169,7 +169,7 @@ local posix = {
 		if #input == 1 then
 			local v = input[1]
 			if v.s then
-				local esc = tbl_get(opts, mkErrFn(opts.shell, "tbl_get"), "repr", opts.shell or "posix", "escape")(v.s)
+				local esc = get_repr_fn(opts, "escape")(v.s)
 				return "echo " .. esc .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
@@ -178,7 +178,7 @@ local posix = {
 			for i = 1, #input do
 				local v = input[i]
 				if v.s then
-					input[i] = "echo " .. tbl_get(opts, mkErrFn(opts.shell, "tbl_get"), "repr", opts.shell or "posix", "escape")(v.s)
+					input[i] = "echo " .. get_repr_fn(opts, "escape")(v.s)
 				elseif v.c then
 					---@diagnostic disable-next-line: assign-type-mismatch
 					input[i] = v.c
@@ -212,7 +212,7 @@ local function resolve(tores, opts)
 			table.insert(input, { c = resolve(v, opts) })
 		end
 	end
-	return tbl_get(opts, mkErrFn(opts.shell, "concat_cmd"), "repr", opts.shell or "posix", "concat_cmd")(opts, val.cmd, input)
+	return get_repr_fn(opts, "concat_cmd")(opts, val.cmd, input)
 end
 
 -- converts nested tables into a flat list of arguments and concatenated input
@@ -238,16 +238,14 @@ local function flatten(input, opts)
 					f(v)
 				end
 			else
-				table.insert(result.args,
-					opts.escape_args and
-					tbl_get(opts, mkErrFn(opts.shell, "escape"), "repr", opts.shell or "posix", "escape")(v) or v)
+				table.insert(result.args, opts.escape_args and get_repr_fn(opts, "escape")(v) or v)
 			end
 		end
 		for k, v in pairs(t) do
 			if k == '__input' then
 				table.insert(result.input, v)
 			elseif not keys[k] and k:sub(1, 2) ~= '__' then
-				local key = tbl_get(opts, mkErrFn(opts.shell, "arg_tbl"), "repr", opts.shell or "posix", "arg_tbl")(opts, k, v)
+				local key = get_repr_fn(opts, "arg_tbl")(opts, k, v)
 				if key then
 					table.insert(result.args, key)
 				end
@@ -278,7 +276,7 @@ local function command(self, cmdstr, ...)
 		for _, v in ipairs(args.args) do
 			table.insert(fargs, v)
 		end
-		cmd = tbl_get(shmt, mkErrFn(shmt.shell, "add_args"), "repr", shmt.shell or "posix", "add_args")(cmd, fargs)
+		cmd = get_repr_fn(shmt, "add_args")(cmd, fargs)
 		local apply = function(c)
 			local res = c
 			for _, f in ipairs(shmt.transforms or {}) do
@@ -304,12 +302,12 @@ local function command(self, cmdstr, ...)
 			unresolved[t] = { cmd = cmd, input = input }
 		elseif is_5_2_plus then
 			local tmp
-			cmd, tmp = tbl_get(shmt, mkErrFn(shmt.shell, "single_stdin"), "repr", shmt.shell or "posix", "single_stdin")(shmt, cmd, input)
-			t = tbl_get(shmt, mkErrFn(shmt.shell, "post_5_2_run"), "repr", shmt.shell or "posix", "post_5_2_run")(shmt, apply(cmd), tmp)
+			cmd, tmp = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), tmp)
 		else
 			local tmp
-			cmd, tmp = tbl_get(shmt, mkErrFn(shmt.shell, "single_stdin"), "repr", shmt.shell or "posix", "single_stdin")(shmt, cmd, input)
-			t = tbl_get(shmt, mkErrFn(shmt.shell, "pre_5_2_run"), "repr", shmt.shell or "posix", "pre_5_2_run")(shmt, apply(cmd), tmp)
+			cmd, tmp = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), tmp)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
@@ -324,9 +322,9 @@ local function command(self, cmdstr, ...)
 					cmd = resolve(t, shmt)
 					local res
 					if is_5_2_plus then
-						res = tbl_get(shmt, mkErrFn(shmt.shell, "post_5_2_run"), "repr", shmt.shell or "posix", "post_5_2_run")(shmt, apply(cmd))
+						res = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd))
 					else
-						res = tbl_get(shmt, mkErrFn(shmt.shell, "pre_5_2_run"), "repr", shmt.shell or "posix", "pre_5_2_run")(shmt, apply(cmd))
+						res = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd))
 					end
 					for k, v in pairs(res or {}) do
 						rawset(t, k, v)
