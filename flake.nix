@@ -1,6 +1,6 @@
 {
   description = ''
-    Tiny lua module to write unix shell scripts with lua (inspired by zserge/luash)
+    Tiny lua module to write shell scripts with lua (inspired by zserge/luash)
 
     Also exports runLuaCommand, which is pkgs.runCommand but the command is in lua and uses shelua
   '';

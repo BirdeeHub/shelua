@@ -29,5 +29,5 @@ jobs:
         with:
           version: ${{ env.LUAROCKS_VERSION }}
           detailed_description: |
-            Tiny library with syntax sugar for (unix) shell scripting in Lua
+            Tiny library with syntax sugar for shell scripting in Lua
             (inspired by zserge/luash but localized to a variable so as to not pollute _G)

@@ -3,7 +3,7 @@
 [![Lua][lua-shield]][lua-url]
 [![LuaRocks][luarocks-shield]][luarocks-url]
 
-Tiny library for unix shell scripting with Lua (inspired by zserge/luash).
+Tiny library for shell scripting with Lua (inspired by zserge/luash).
 
 `luash` is interesting, but it modifies `_G` in an extreme way.
 
