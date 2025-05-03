@@ -157,6 +157,7 @@ However `concat_cmd` cannot return an optional second argument.
 	---@field s? string
 	---cmd to combine
 	---@field c? string
+
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true
 	---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): string
