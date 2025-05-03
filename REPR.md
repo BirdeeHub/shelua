@@ -3,10 +3,11 @@
 A shell representation is a collection of functions used for defining the actual character sequences your commands translate into.
 
 `shelua` takes care of resolving the pipes of functions,
-and defining all the special properties of the library,
-and provides a built in representation for `posix` shells.
+and defining all the special properties of the library.
 
-These functions define the actual connective characters that join things together, after shelua has taken care of the structuring for you.
+It also provides a built in representation for `posix` shells.
+
+These representation functions define the actual connective characters that join things together, after shelua has taken care of the structuring for you.
 
 To define and use a new representation, add the table to the `repr` table in the `SheluaOpts` table.
 Then set the `shell` setting to the name of its key in that table.
