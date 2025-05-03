@@ -93,7 +93,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 		return cmd, tmp
 	end,
 	---runs the command and returns the result and exit code and signal
-	---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+	---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	post_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd, 'r')
 		local output, exit, status
@@ -111,7 +111,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	end,
 	---runs the command and returns the result and exit code and signal
 	---Should return the flags using the same format as io.popen does in 5.2+
-	---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+	---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	pre_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
 		local output
@@ -143,6 +143,9 @@ Each item in the input list is a `PipeInput` type table. A table containing EITH
 
 These represent either a the return previous iteration of `concat_cmd`, or a string provided via an `{ __input }` argument.
 
+They may also contain an `m` (message) key if they contain a `c`,
+which is the optional second return value of the call to `concat_cmd`
+
 Your goal in this function is to construct a string from the prior inputs,
 that pipes them into the command, and then return that string, if there are any prior inputs to pipe.
 
@@ -158,10 +161,13 @@ However `concat_cmd` cannot return an optional second argument.
 	---@field s? string
 	---cmd to combine
 	---@field c? string
+	---optional 2nd return of concat_cmd
+	---@field m? string
 
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true
-	---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): string
+	---may return an optional second value to be placed in another PipeInput, or returned to post_5_2_run or pre_5_2_run
+	---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): (string, any?)
 	concat_cmd = function(opts, cmd, input)
 		if #input == 1 then
 			local v = input[1]

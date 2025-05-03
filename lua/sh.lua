@@ -5,6 +5,8 @@
 ---@field s? string
 ---cmd to combine
 ---@field c? string
+---optional 2nd return of concat_cmd
+---@field m? string
 
 ---@class Shelua.Repr
 ---escapes a string for the shell
@@ -18,11 +20,11 @@
 ---@field single_stdin fun(opts: SheluaOpts, cmd: string, input: string?): (string, any?)
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
----@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): string
+---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): (string, any?)
 ---runs the command and returns the result and exit code and signal
----@field post_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---runs the command and returns the result and exit code and signal
----@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, tmp: any?): { __input: string, __exitcode: number, __signal: number }
+---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
 
 ---@class SheluaOpts
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
@@ -209,7 +211,8 @@ local function resolve(tores, opts)
 		if type(v) == "string" then
 			table.insert(input, { s = v })
 		elseif type(v) == "table" then
-			table.insert(input, { c = resolve(v, opts) })
+			local c, m = resolve(v, opts)
+			table.insert(input, { c = c, m = m })
 		end
 	end
 	return get_repr_fn(opts, "concat_cmd")(opts, val.cmd, input)
@@ -301,13 +304,13 @@ local function command(self, cmdstr, ...)
 		if shmt.proper_pipes then
 			unresolved[t] = { cmd = cmd, input = input }
 		elseif is_5_2_plus then
-			local tmp
-			cmd, tmp = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
-			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), tmp)
+			local msg
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 		else
-			local tmp
-			cmd, tmp = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
-			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), tmp)
+			local msg
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
@@ -319,12 +322,13 @@ local function command(self, cmdstr, ...)
 					return command(s, c)
 				end
 				if c == "__input" or c == "__exitcode" or c == "__signal" then
-					cmd = resolve(t, shmt)
+					local msg
+					cmd, msg = resolve(t, shmt)
 					local res
 					if is_5_2_plus then
-						res = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd))
+						res = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 					else
-						res = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd))
+						res = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
 					end
 					for k, v in pairs(res or {}) do
 						rawset(t, k, v)
