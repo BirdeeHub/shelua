@@ -168,7 +168,6 @@ However `concat_cmd` cannot return an optional second argument.
 				if v.s then
 					input[i] = "echo " .. opts.repr[opts.shell or "posix"].escape(v.s)
 				elseif v.c then
-					---@diagnostic disable-next-line: assign-type-mismatch
 					input[i] = v.c
 				end
 			end
