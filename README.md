@@ -76,11 +76,11 @@ Pipelines can be also written as chained function calls. Lua allows you to omit 
 -- $ ls /bin | grep $filter | wc -l
 
 -- normal syntax
-sh.wc(sh.grep(sh.ls('/bin'), filter), '-l')
+sh.wc(sh.grep(sh.ls('/bin'), "$filter"), '-l')
 -- chained syntax
-sh.ls('/bin'):grep(filter):wc('-l')
+sh.ls('/bin'):grep("$filter"):wc('-l')
 -- chained syntax without parens
-sh.ls '/bin' : grep filter : wc '-l'
+sh.ls '/bin' : grep "$filter" : wc '-l'
 ```
 
 Note that the commands are not running in parallel (because Lua can only handle
