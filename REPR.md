@@ -177,8 +177,8 @@ However `concat_cmd` cannot return an optional second argument.
 			return cmd
 		end
 	end,
-	---Will contain either s, a string,
-	---or B, an input command string
+	---Will contain either `s`, a plain string,
+	---or `c`, an input command string
 	---@class Shelua.PipeInput
 	---string stdin to combine
 	---@field s? string
