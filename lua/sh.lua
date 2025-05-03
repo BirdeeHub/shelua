@@ -62,9 +62,10 @@ end
 ---@param opts SheluaOpts
 ---@param attr string
 ---@return function
-local get_repr_fn = function (opts, attr)
+local get_repr_fn = function(opts, attr)
 	return tbl_get(opts, function()
-		error("Shelua Repr Error: " .. tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
+		error("Shelua Repr Error: " ..
+		tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
 	end, "repr", opts.shell or "posix", attr)
 end
 
@@ -171,8 +172,7 @@ local posix = {
 		if #input == 1 then
 			local v = input[1]
 			if v.s then
-				local esc = get_repr_fn(opts, "escape")(v.s)
-				return "echo " .. esc .. " | " .. cmd
+				return "echo " .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
 			end
