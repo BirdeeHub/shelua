@@ -162,7 +162,7 @@ sh.proper_pipes = false
 sh.transforms = {}
 ---Allows the definition of new shell backends.
 ---@type table<string, Shelua.Repr>
-sh.repr = { posix = { "..." } }
+sh.repr = { posix = { --[[...]] } }
 sh.shell = "posix"
 ```
 
@@ -175,9 +175,12 @@ Or you can call it with a table to modify the existing settings and return a new
 Or you can call it with a function that receives the old settings table and returns a new one.
 
 ```lua
--- these 3 forms are equivalent
-local newsh = require('sh')()
+-- these 4 forms are equivalent
+local nsh = require('sh')()
 newsh.assert_zero = true
+-- or
+local newsh = require('sh')()
+getmetatable(newsh).assert_zero = true
 -- or
 local newersh = require('sh')({assert_zero = true})
 -- or
@@ -186,7 +189,7 @@ local evennewersh = require('sh')(function(s) s.assert_zero = true return s end)
 -- unaffected, prints 1
 print(require('sh')["false"]().__exitcode)
 -- would throw an error due to assert_zero = true
-print(newsh["false"]().__exitcode)
+print(nsh["false"]().__exitcode)
 ```
 
 ## For nix users
