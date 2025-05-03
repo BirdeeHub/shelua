@@ -131,6 +131,11 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 			__signal = (exit and exit > 128) and (exit - 128) or 0
 		}
 	end,
+	---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
+	---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
+	---each string in this table must begin with '__' or it will be ignored
+	---@field extra_cmd_results string[]
+	extra_cmd_results = {},
 ```
 
 And the final method, `concat_cmd`. This is the counterpart to `single_stdin`.

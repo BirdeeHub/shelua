@@ -25,6 +25,10 @@
 ---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---runs the command and returns the result and exit code and signal
 ---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
+---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
+---each string in this table must begin with '__' or it will be ignored
+---@field extra_cmd_results string[]
 
 ---@class SheluaOpts
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
@@ -59,16 +63,6 @@ local function tbl_get(t, default, ...)
 	return t
 end
 
----@param opts SheluaOpts
----@param attr string
----@return function
-local get_repr_fn = function(opts, attr)
-	return tbl_get(opts, function()
-		error("Shelua Repr Error: " ..
-		tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
-	end, "repr", opts.shell or "posix", attr)
-end
-
 ---@param orig any
 ---@param seen? table
 ---@return any
@@ -95,6 +89,16 @@ local function deepcopy(orig, seen)
 		pcall(setmetatable, copy, deepcopy(mt, seen))
 	end
 	return copy
+end
+
+---@param opts SheluaOpts
+---@param attr string
+---@return function
+local get_repr_fn = function(opts, attr)
+	return tbl_get(opts, function()
+		error("Shelua Repr Error: " ..
+		tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
+	end, "repr", opts.shell or "posix", attr)
 end
 
 ---@type Shelua.Repr
@@ -134,6 +138,29 @@ local posix = {
 		end
 		return cmd, tmp
 	end,
+	concat_cmd = function(opts, cmd, input)
+		if #input == 1 then
+			local v = input[1]
+			if v.s then
+				return "echo " .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
+			else
+				return v.c .. " | " .. cmd
+			end
+		elseif #input > 1 then
+			for i = 1, #input do
+				local v = input[i]
+				if v.s then
+					input[i] = "echo " .. get_repr_fn(opts, "escape")(v.s)
+				elseif v.c then
+					---@diagnostic disable-next-line: assign-type-mismatch
+					input[i] = v.c
+				end
+			end
+			return "{ " .. table.concat(input, " ; ") .. " ; } | " .. cmd
+		else
+			return cmd
+		end
+	end,
 	post_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd, 'r')
 		local output, exit, status
@@ -168,30 +195,18 @@ local posix = {
 			__signal = (exit and exit > 128) and (exit - 128) or 0
 		}
 	end,
-	concat_cmd = function(opts, cmd, input)
-		if #input == 1 then
-			local v = input[1]
-			if v.s then
-				return "echo " .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
-			else
-				return v.c .. " | " .. cmd
-			end
-		elseif #input > 1 then
-			for i = 1, #input do
-				local v = input[i]
-				if v.s then
-					input[i] = "echo " .. get_repr_fn(opts, "escape")(v.s)
-				elseif v.c then
-					---@diagnostic disable-next-line: assign-type-mismatch
-					input[i] = v.c
-				end
-			end
-			return "{ " .. table.concat(input, " ; ") .. " ; } | " .. cmd
-		else
-			return cmd
-		end
-	end,
+	extra_cmd_results = {},
 }
+
+local function check_if_cmd_result(opts, k)
+	if k == "__input" or k == "__exitcode" or k == "__signal" then return true end
+	for _, v in ipairs(tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")) do
+		if type(v) == "string" and v:sub(1, 2) == '__' and k == v then
+			return true
+		end
+	end
+	return false
+end
 
 local unresolved = {} -- store unresolved results here, with unresolved result table as key
 
@@ -321,7 +336,7 @@ local function command(self, cmdstr, ...)
 				if not shmt.proper_pipes then
 					return command(s, c)
 				end
-				if c == "__input" or c == "__exitcode" or c == "__signal" then
+				if check_if_cmd_result(shmt, c) then
 					local msg
 					cmd, msg = resolve(t, shmt)
 					local res
