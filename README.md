@@ -130,6 +130,15 @@ local gittag = sh('git', 'tag') -- gittag(...) is same as sh.git('tag', ...)
 gittag('-l') -- list all git tags
 ```
 
+## Command output can be concatenated using `..`
+
+Output from commands can be concatenated using the `..` operator:
+
+```lua
+print("I am: "..whoami())
+print(sh.echo 'Hello World' :sed("s/World/Lua/g") .. " " .. sh.echo 'Hello Lua' :sed "s/Hello/Goodbye/g")
+```
+
 ## Exit status and signal values
 
 Each command function returns a table with `__exitcode` and `__signal` fields.
