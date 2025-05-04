@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/BirdeeHub/shelua/compare/v1.6.0...v1.6.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* **feature:** repr single_stdin (and concat_cmd) know error codes of resolved command inputs ([8e7174f](https://github.com/BirdeeHub/shelua/commit/8e7174fcf09de66f3a1fdac036b12ffc15bfdae0))
+
 ## [1.6.0](https://github.com/BirdeeHub/shelua/compare/v1.5.2...v1.6.0) (2025-05-04)
 
 
