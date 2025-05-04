@@ -28,7 +28,7 @@
 ---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
 ---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 ---each string in this table must begin with '__' or it will be ignored
----@field extra_cmd_results string[]
+---@field extra_cmd_results string[]|fun(opts: SheluaOpts): string[]
 
 ---@class SheluaOpts
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
@@ -200,7 +200,8 @@ local posix = {
 
 local function check_if_cmd_result(opts, k)
 	if k == "__input" or k == "__exitcode" or k == "__signal" then return true end
-	for _, v in ipairs(tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")) do
+	local xtra = tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")
+	for _, v in ipairs(type(xtra) == "function" and xtra(opts) or xtra) do
 		if type(v) == "string" and v:sub(1, 2) == '__' and k == v then
 			return true
 		end

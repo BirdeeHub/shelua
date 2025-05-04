@@ -145,7 +145,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
 	---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 	---each string in this table must begin with '__' or it will be ignored
-	---@field extra_cmd_results string[]
+	---@field extra_cmd_results string[]|fun(opts: SheluaOpts): string[]
 	extra_cmd_results = {},
 ```
 
