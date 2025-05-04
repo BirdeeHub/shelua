@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/BirdeeHub/shelua/compare/v1.5.1...v1.5.2) (2025-05-04)
+
+
+### Bug Fixes
+
+* **repr:** functions should fall back to posix version if not defined ([e579f38](https://github.com/BirdeeHub/shelua/commit/e579f386cda07eb2fe58e53ffc4e658d66309947))
+
 ## [1.5.1](https://github.com/BirdeeHub/shelua/compare/v1.5.0...v1.5.1) (2025-05-04)
 
 
