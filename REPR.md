@@ -87,14 +87,14 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 	---called only when proper_pipes is false
 	-- cmd is the result of add_args
-	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, input: string?): (string|any, any?)
+	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?): (string|any, any?)
 	single_stdin = function(opts, cmd, input)
 		local tmp
-		if input then
+		if inputs then
 			tmp = os.tmpname()
 			local f = io.open(tmp, 'w')
 			if f then
-				f:write(input)
+				f:write(table.concat(inputs))
 				f:close()
 				cmd = cmd .. ' <' .. tmp
 			end
