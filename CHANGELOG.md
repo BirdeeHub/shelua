@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/BirdeeHub/shelua/compare/v1.5.0...v1.5.1) (2025-05-04)
+
+
+### Bug Fixes
+
+* **feature:** allow extra_cmd_results to be a function as well ([ff19a36](https://github.com/BirdeeHub/shelua/commit/ff19a363ec86fb7932f4b6a4ff278ef874097737))
+
 ## [1.5.0](https://github.com/BirdeeHub/shelua/compare/v1.4.0...v1.5.0) (2025-05-04)
 
 
