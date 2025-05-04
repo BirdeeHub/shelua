@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/BirdeeHub/shelua/compare/v1.5.2...v1.6.0) (2025-05-04)
+
+
+### Features
+
+* **BREAKING:** repr single_stdin inputs are a list to allow different treatment than concat ([38b84df](https://github.com/BirdeeHub/shelua/commit/38b84df219ae9ec4f28b8e0a6783581257ea6cab))
+
 ## [1.5.2](https://github.com/BirdeeHub/shelua/compare/v1.5.1...v1.5.2) (2025-05-04)
 
 
