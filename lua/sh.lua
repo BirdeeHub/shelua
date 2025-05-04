@@ -97,7 +97,7 @@ end
 local get_repr_fn = function(opts, attr)
 	return tbl_get(opts, function()
 		error("Shelua Repr Error: " ..
-		tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
+			tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
 	end, "repr", opts.shell or "posix", attr)
 end
 
@@ -163,7 +163,7 @@ local posix = {
 	end,
 	post_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd, 'r')
-		local output, exit, status
+		local output, _, exit, status
 		if p then
 			output = p:read('*a')
 			_, exit, status = p:close()
@@ -217,10 +217,10 @@ local unresolved = {} -- store unresolved results here, with unresolved result t
 ---@param opts SheluaOpts
 local function resolve(tores, opts)
 	local val = unresolved[tores]
+	unresolved[tores] = nil
 	if not val then
 		error("Can't resolve result table, due to an input command being part of another already resolved pipe")
 	end
-	unresolved[tores] = nil
 	local input = {}
 	for _, v in ipairs(val.input or {}) do
 		if type(v) == "string" then
@@ -245,14 +245,11 @@ local function flatten(input, opts)
 			keys[k] = true
 			local v = t[k]
 			if type(v) == 'table' then
-				if unresolved[v] then
-					if opts.proper_pipes then
-						table.insert(result.input, v)
-					else -- resolve it if not proper_pipes
-						local _ = v.__input
-						f(v)
-					end
+				if unresolved[v] and opts.proper_pipes then
+					table.insert(result.input, v)
 				else
+					-- resolve it if not proper_pipes, (or intermediate to get the better error message)
+					local _ = v.__input
 					f(v)
 				end
 			else
@@ -330,7 +327,7 @@ local function command(self, cmdstr, ...)
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 		end
-		local mt = {
+		return setmetatable(t, {
 			__metatable = shmt,
 			__index = function(s, c)
 				if not shmt.proper_pipes then
@@ -351,7 +348,7 @@ local function command(self, cmdstr, ...)
 					if shmt.assert_zero and rawget(t, "__exitcode") ~= 0 then
 						error("Command " ..
 							tostring(cmd) ..
-							" exited with non-zero status: " .. rawget(t, "__exitcode"))
+							" exited with non-zero status: " .. tostring(rawget(t, "__exitcode")))
 					end
 					return rawget(t, c)
 				else
@@ -361,9 +358,11 @@ local function command(self, cmdstr, ...)
 			__tostring = function(s)
 				-- return trimmed command output as a string
 				return s.__input:match('^%s*(.-)%s*$')
-			end
-		}
-		return setmetatable(t, mt)
+			end,
+			__concat = function(a, b)
+				return tostring(a) .. tostring(b)
+			end,
+		})
 	end
 end
 
@@ -373,7 +372,7 @@ local MT = {
 		-- escape unnamed shell arguments
 		-- NOTE: k = v table keys are still not escaped, k = v table values always are
 		escape_args = false,
-		-- Assert that exit code is 0 or throw and error
+		-- Assert that exit code is 0 or throw an error
 		assert_zero = false,
 		-- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
 		proper_pipes = false,

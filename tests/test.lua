@@ -75,5 +75,11 @@ test('Check command with table args', function()
 	local r = sh.stat('/bin', { format = '%a %n' })
 	ok(tostring(r) == '755 /bin', 'stat --format "%a %n" /bin')
 end)
+test('Check concat command results', function()
+	local r = sh.echo 'Hello World' :sed("s/Hello/Goodbye/g") .. " " .. sh.echo 'Hello Lua' :sed "s/Hello/Goodbye/g"
+	ok(tostring(r) == 'Goodbye World Goodbye Lua', 'concat commands with string')
+	local r = sh.echo 'Hello World' :sed("s/Hello/Goodbye/g") .. sh.echo 'Hello Lua' :sed "s/Hello/Goodbye/g"
+	ok(tostring(r) == 'Goodbye WorldGoodbye Lua', 'concat commands with commands')
+end)
 
 if tests_failed > 0 then os.exit(1) end

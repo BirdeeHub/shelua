@@ -168,6 +168,12 @@ sh.shell = "posix"
 
 For info on `sh.repr`, see [Shell Representation docs](./REPR.md)
 
+If you need to change a nested value, you should instead get the table itself and change that.
+
+```lua
+local sh_settings = getmetatable(require('sh'))
+```
+
 You can make a local copy with different settings by calling the sh table as a function with no arguments.
 
 Or you can call it with a table to modify the existing settings and return a new sh table.

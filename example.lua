@@ -12,6 +12,9 @@ print(sh.echo('Hello World'):sed("s/Hello/Goodbye/g"))
 -- Lua allows to omit parens
 print(sh.echo 'Hello World' :sed "s/Hello/Goodbye/g")
 
+-- shelua allows you to concatenate command outputs with ..
+print((sh.echo 'Hello World' :sed "s/Hello/Goodbye/g") .. " " .. sh.echo 'Hello Lua' :sed "s/Hello/Goodbye/g")
+
 -- intermediate output in the pipeline can be stored into variables
 local sedecho = sh.sed(sh.echo('hello', 'world'), 's/world/Lua/g')
 print('output:', sedecho)
