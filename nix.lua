@@ -1,7 +1,9 @@
+-- lua `stdenv` for runLuaCommand
 return function(shell_hooks)
   _G.sh = require("sh")
   string.escapeShellArg = getmetatable(sh).repr.posix.escape
   sh.assert_zero = true
+  sh.stdenv_shell_hooks_path = shell_hooks
   local shell = os.getenv("SHELL")
   local function with_shell_hooks(cmd)
     return string.format(
