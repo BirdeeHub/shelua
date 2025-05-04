@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/BirdeeHub/shelua/compare/v1.3.2...v1.4.0) (2025-05-04)
+
+
+### Features
+
+* **feature:** allow to concatenate command results via .. ([2db9416](https://github.com/BirdeeHub/shelua/commit/2db94166a3b064865823a6bd4052eb88582c7425))
+
 ## [1.3.2](https://github.com/BirdeeHub/shelua/compare/v1.3.1...v1.3.2) (2025-05-03)
 
 
