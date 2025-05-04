@@ -3,6 +3,10 @@
 ---@class Shelua.PipeInput
 ---string stdin to combine
 ---@field s? string
+---if string input came from a command,
+---`e` will contain a table of all other command result fields
+---such as `__exitcode`
+---@field e? string
 ---cmd to combine
 ---@field c? string|any
 ---optional 2nd return of concat_cmd
@@ -17,7 +21,9 @@
 ---@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 ---called when proper_pipes is false
----@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?): (string|any, any?)
+---cmd is the result of add_args
+---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
+---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
 ---@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
@@ -125,7 +131,7 @@ local posix = {
 		if type(a) == 'number' then return k .. '=' .. tostring(a) end
 		return nil
 	end,
-	single_stdin = function(opts, cmd, inputs)
+	single_stdin = function(opts, cmd, inputs, codes)
 		local tmp
 		if inputs then
 			tmp = os.tmpname()
@@ -198,13 +204,20 @@ local posix = {
 	extra_cmd_results = {},
 }
 
-local function check_if_cmd_result(opts, k)
-	if k == "__input" or k == "__exitcode" or k == "__signal" then return true end
+local function cmd_result_names(opts)
+	local names = { "__input", "__exitcode", "__signal" }
 	local xtra = tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")
 	for _, v in ipairs(type(xtra) == "function" and xtra(opts) or xtra) do
-		if type(v) == "string" and v:sub(1, 2) == '__' and k == v then
-			return true
+		if type(v) == "string" and v:sub(1, 2) == '__' then
+			table.insert(names, v)
 		end
+	end
+	return names
+end
+
+local function check_if_cmd_result(opts, k)
+	for _, v in ipairs(cmd_result_names(opts)) do
+		if k == v then return true end
 	end
 	return false
 end
@@ -223,9 +236,9 @@ local function resolve(tores, opts)
 		error("Can't resolve result table, due to an input command being part of another already resolved pipe")
 	end
 	local input = {}
-	for _, v in ipairs(val.input or {}) do
+	for k, v in ipairs(val.input or {}) do
 		if type(v) == "string" then
-			table.insert(input, { s = v })
+			table.insert(input, { s = v, e = val.codes[k] or nil })
 		elseif type(v) == "table" then
 			local c, m = resolve(v, opts)
 			table.insert(input, { c = c, m = m })
@@ -238,7 +251,7 @@ end
 ---@param input table
 ---@param opts SheluaOpts
 local function flatten(input, opts)
-	local result = { args = {}, input = {} }
+	local result = { args = {}, input = {}, codes = {} }
 
 	local function f(t)
 		local keys = {}
@@ -248,19 +261,33 @@ local function flatten(input, opts)
 			if type(v) == 'table' then
 				if unresolved[v] and opts.proper_pipes then
 					table.insert(result.input, v)
+					table.insert(result.codes, false)
 				else
-					-- resolve it if not proper_pipes, (or intermediate to get the better error message)
-					local _ = v.__input
 					f(v)
 				end
 			else
 				table.insert(result.args, opts.escape_args and get_repr_fn(opts, "escape")(v) or v)
 			end
 		end
+		local codes = {}
+		local to_add = false
+		for _, k in ipairs(cmd_result_names(opts)) do
+			local v = t[k]
+			keys[k] = true
+			if v ~= nil then
+				if k == '__input' then
+					table.insert(result.input, v)
+					to_add = true
+				else
+					codes[k] = v
+				end
+			end
+		end
+		if to_add then
+			table.insert(result.codes, codes)
+		end
 		for k, v in pairs(t) do
-			if k == '__input' then
-				table.insert(result.input, v)
-			elseif not keys[k] and k:sub(1, 2) ~= '__' then
+			if not keys[k] and k:sub(1, 2) ~= '__' then
 				local key = get_repr_fn(opts, "arg_tbl")(opts, k, v)
 				if key then
 					table.insert(result.args, key)
@@ -301,22 +328,25 @@ local function command(self, cmdstr, ...)
 			return res
 		end
 		local input = {}
-		for _, v in ipairs(preargs.input or {}) do
+		local codes = {}
+		for k, v in ipairs(preargs.input) do
 			table.insert(input, v)
+			table.insert(codes, preargs.codes[k])
 		end
-		for _, v in ipairs(args.input or {}) do
+		for k, v in ipairs(args.input) do
 			table.insert(input, v)
+			table.insert(codes, args.codes[k])
 		end
 		local t = {}
 		if shmt.proper_pipes then
-			unresolved[t] = { cmd = cmd, input = input }
+			unresolved[t] = { cmd = cmd, input = input, codes = codes }
 		elseif is_5_2_plus then
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil, #codes > 0 and codes or nil)
 			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 		else
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil, #codes > 0 and codes or nil)
 			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then

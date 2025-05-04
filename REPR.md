@@ -86,9 +86,10 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 ```lua
 	---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 	---called only when proper_pipes is false
-	-- cmd is the result of add_args
-	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?): (string|any, any?)
-	single_stdin = function(opts, cmd, input)
+	---cmd is the result of add_args
+	---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
+	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
+	single_stdin = function(opts, cmd, inputs, codes)
 		local tmp
 		if inputs then
 			tmp = os.tmpname()
@@ -174,6 +175,11 @@ after adding the newly resolved values to the command result being resolved.
 	---@class Shelua.PipeInput
 	---string stdin to combine
 	---@field s? string
+	---if string input came from a command,
+	---`e` will contain a table of all other command result fields
+	---such as `__exitcode`
+	---@field e? string
+	---
 	---cmd to combine
 	---@field c? string|any
 	---optional 2nd return of concat_cmd
