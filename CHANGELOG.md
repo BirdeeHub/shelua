@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/BirdeeHub/shelua/compare/v1.4.0...v1.5.0) (2025-05-04)
+
+
+### Features
+
+* **BREAKING:** repr add_args function also gets access to opts ([7397dba](https://github.com/BirdeeHub/shelua/commit/7397dbab57148a29f99ad58666ed751649269c82))
+
 ## [1.4.0](https://github.com/BirdeeHub/shelua/compare/v1.3.2...v1.4.0) (2025-05-04)
 
 
