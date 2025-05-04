@@ -50,19 +50,6 @@ local is_5_2_plus = (function()
 	return major > 5 or (major == 5 and minor >= 2)
 end)()
 
----@param t table
----@param default any
----@vararg any
----@return any
-local function tbl_get(t, default, ...)
-	if #{ ... } == 0 then return default end
-	for _, key in ipairs({ ... }) do
-		if type(t) ~= "table" then return default end
-		t = t[key]
-	end
-	return t
-end
-
 ---@param orig any
 ---@param seen? table
 ---@return any
@@ -91,14 +78,27 @@ local function deepcopy(orig, seen)
 	return copy
 end
 
+---@param t table
+---@param default any
+---@vararg any
+---@return any
+local function tbl_get(t, default, ...)
+	if #{ ... } == 0 then return default end
+	for _, key in ipairs({ ... }) do
+		if type(t) ~= "table" then return default end
+		t = t[key]
+	end
+	return t or default
+end
+
 ---@param opts SheluaOpts
 ---@param attr string
 ---@return function
 local get_repr_fn = function(opts, attr)
-	return tbl_get(opts, function()
+	return tbl_get(opts, tbl_get(opts, function()
 		error("Shelua Repr Error: " ..
 			tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
-	end, "repr", opts.shell or "posix", attr)
+	end, "repr", "posix", attr), "repr", opts.shell or "posix", attr)
 end
 
 ---@type Shelua.Repr
