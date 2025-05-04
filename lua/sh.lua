@@ -17,7 +17,7 @@
 ---@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 ---called when proper_pipes is false
----@field single_stdin fun(opts: SheluaOpts, cmd: string|any, input: string?): (string|any, any?)
+---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?): (string|any, any?)
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
 ---@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
@@ -125,13 +125,13 @@ local posix = {
 		if type(a) == 'number' then return k .. '=' .. tostring(a) end
 		return nil
 	end,
-	single_stdin = function(opts, cmd, input)
+	single_stdin = function(opts, cmd, inputs)
 		local tmp
-		if input then
+		if inputs then
 			tmp = os.tmpname()
 			local f = io.open(tmp, 'w')
 			if f then
-				f:write(input)
+				f:write(table.concat(inputs))
 				f:close()
 				cmd = cmd .. ' <' .. tmp
 			end
@@ -300,29 +300,23 @@ local function command(self, cmdstr, ...)
 			end
 			return res
 		end
-		local input
-		if shmt.proper_pipes then
-			input = {}
-			for _, v in ipairs(preargs.input or {}) do
-				table.insert(input, v)
-			end
-			for _, v in ipairs(args.input or {}) do
-				table.insert(input, v)
-			end
-		else
-			input = (#preargs.input > 0 or #args.input > 0) and
-				table.concat(preargs.input or {}) .. table.concat(args.input or {}) or nil
+		local input = {}
+		for _, v in ipairs(preargs.input or {}) do
+			table.insert(input, v)
+		end
+		for _, v in ipairs(args.input or {}) do
+			table.insert(input, v)
 		end
 		local t = {}
 		if shmt.proper_pipes then
 			unresolved[t] = { cmd = cmd, input = input }
 		elseif is_5_2_plus then
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil)
 			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 		else
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, input)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil)
 			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
