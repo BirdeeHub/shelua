@@ -262,6 +262,8 @@ You should provide the interpreter path via something like this to get the most 
 
 - `os.write_file(opts, filename, contents)` will be added where opts is `{ append = false, newline = true }` by default
 
+- The path to the shell hooks will be added to the shelua library's metatable (via `sh.stdenv_shell_hooks_path = shell_hooks`), for use in redefining the existing transform which adds them if desired.
+
 ## License
 
 Code is distributed under the MIT license.
