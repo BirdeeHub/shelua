@@ -65,7 +65,7 @@ local posix = {
 	---adds args to the command
 	---if you decide to represent your command (first return value) internally as something other than a string,
 	-- you should define __tostring metamethod for it to preserve error messages
-	---@field add_args fun(cmd: string, args: string[]): string|any
+	---@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
 	add_args = function(cmd, args)
 		return cmd .. " " .. table.concat(args, " ")
 	end,

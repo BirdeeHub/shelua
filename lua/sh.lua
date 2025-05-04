@@ -14,7 +14,7 @@
 ---turns table form args from table keys and values into flags
 ---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string|nil
 ---adds args to the command
----@field add_args fun(cmd: string, args: string[]): string|any
+---@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 ---called when proper_pipes is false
 ---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, input: string?): (string|any, any?)
@@ -112,7 +112,7 @@ local posix = {
 			return str
 		end
 	end,
-	add_args = function(cmd, args)
+	add_args = function(opts, cmd, args)
 		return cmd .. " " .. table.concat(args, " ")
 	end,
 	-- converts key and it's argument to "-k" or "-k=v" or just ""
@@ -291,7 +291,7 @@ local function command(self, cmdstr, ...)
 		for _, v in ipairs(args.args) do
 			table.insert(fargs, v)
 		end
-		cmd = get_repr_fn(shmt, "add_args")(cmd, fargs)
+		cmd = get_repr_fn(shmt, "add_args")(shmt, cmd, fargs)
 		local apply = function(c)
 			local res = c
 			for _, f in ipairs(shmt.transforms or {}) do
