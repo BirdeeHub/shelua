@@ -14,11 +14,7 @@ Then set the `shell` setting to the name of its key in that table.
 
 The first 3 functions to define if necessary are hopefully fairly self explanatory.
 
-`escape` makes sure each string it is given will escaped as a single argument when passed to the shell.
-
-`add_args` is what concatenates the args onto the command. By default it uses space as a separator, and you are unlikely to need to change it.
-
-`arg_tbl` is what translates key value pairs in arguments provided within lua tables, for example, this command:
+- `arg_tbl` is what translates key value pairs in arguments provided within lua tables, for example, this command:
 
 ```lua
 local utils_json = tostring(sh.nixdoc {
@@ -30,11 +26,31 @@ local utils_json = tostring(sh.nixdoc {
 })
 ```
 
-Our first 3 Repr methods for posix, `escape`, `add_args`, and `arg_tbl`
+- `escape` makes sure each string it is given will escaped as a single argument when passed to the shell.
+
+- `add_args` is what concatenates the args onto the command. By default it uses space as a separator, and you are unlikely to need to change it.
+	- The list of arguments provided to `add_args` will already have table-form arguments translated by `arg_tbl`
+	- When `escape_args` is true, any unnamed arguments in the list will also already be escaped by the `escape` function defined in the representation.
+	- If you wish to make your `add_args` return something that is not a string, your other representation functions and any defined `transforms` must be able to handle that.
+	- In addition, if you wish to make your `add_args` return something that is not a string, you should define `__tostring` in its metatable to preserve useful error messages.
+
+Our first 3 `Shelua.Repr` methods for `posix`: `arg_tbl`, `escape`, and `add_args`
 
 ```lua
 ---@type Shelua.Repr
 local posix = {
+	-- converts key and it's argument to "-k" or "-k=v" or "--key=v" or nil to ignore
+	---turns table form args from table keys and values into flags
+	---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string?
+	arg_tbl = function(opts, k, a)
+		k = (#k > 1 and '--' or '-') .. k
+		if type(a) == 'boolean' and a then return k end
+		if type(a) == 'string' then
+			return k .. "=" .. opts.repr[opts.shell or "posix"].escape(a)
+		end
+		if type(a) == 'number' then return k .. '=' .. tostring(a) end
+		return nil
+	end,
 	---escapes a string for the shell
 	---@field escape fun(arg: any): string
 	escape = function(arg)
@@ -47,27 +63,19 @@ local posix = {
 		end
 	end,
 	---adds args to the command
-	---@field add_args fun(cmd: string, args: string[]): string
+	---if you decide to represent your command (first return value) internally as something other than a string,
+	-- you should define __tostring metamethod for it to preserve error messages
+	---@field add_args fun(cmd: string, args: string[]): string|any
 	add_args = function(cmd, args)
 		return cmd .. " " .. table.concat(args, " ")
-	end,
-	-- converts key and it's argument to "-k" or "-k=v" or "--key=v" or nil to ignore
-	---turns table form args from table keys and values into flags
-	---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string|nil
-	arg_tbl = function(opts, k, a)
-		k = (#k > 1 and '--' or '-') .. k
-		if type(a) == 'boolean' and a then return k end
-		if type(a) == 'string' then
-			return k .. "=" .. opts.repr[opts.shell or "posix"].escape(a)
-		end
-		if type(a) == 'number' then return k .. '=' .. tostring(a) end
-		return nil
 	end,
 ```
 
 `single_stdin` is the function that modifies cmd to add stdin input when `proper_pipes` == `false`
 
-Its result(s) will then be passed to one of the 2 following run functions based on current lua version.
+Its first return value will then be passed through any defined `transforms`.
+
+the result, in addition to its optional second return value will then be passed to one of the 2 following run functions based on current lua version.
 
 `post_5_2_run` and `pre_5_2_run` are what call the actual final shell command when needed.
 
@@ -78,7 +86,8 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 ```lua
 	---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 	---called only when proper_pipes is false
-	---@field single_stdin fun(opts: SheluaOpts, cmd: string, input: string?): (string, any?)
+	-- cmd is the result of add_args
+	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, input: string?): (string|any, any?)
 	single_stdin = function(opts, cmd, input)
 		local tmp
 		if input then
@@ -93,7 +102,8 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 		return cmd, tmp
 	end,
 	---runs the command and returns the result and exit code and signal
-	---@field post_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
+	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
+	---@field post_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	post_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd, 'r')
 		local output, exit, status
@@ -111,7 +121,8 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	end,
 	---runs the command and returns the result and exit code and signal
 	---Should return the flags using the same format as io.popen does in 5.2+
-	---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
+	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
+	---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	pre_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
 		local output
@@ -164,14 +175,15 @@ after adding the newly resolved values to the command result being resolved.
 	---string stdin to combine
 	---@field s? string
 	---cmd to combine
-	---@field c? string
+	---@field c? string|any
 	---optional 2nd return of concat_cmd
 	---@field m? string
 
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true
 	---may return an optional second value to be placed in another PipeInput, or returned to post_5_2_run or pre_5_2_run
-	---@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): (string, any?)
+	-- cmd is the same type as the result of add_args
+	---@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 	concat_cmd = function(opts, cmd, input)
 		if #input == 1 then
 			local v = input[1]

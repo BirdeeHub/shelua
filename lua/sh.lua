@@ -4,7 +4,7 @@
 ---string stdin to combine
 ---@field s? string
 ---cmd to combine
----@field c? string
+---@field c? string|any
 ---optional 2nd return of concat_cmd
 ---@field m? string
 
@@ -14,17 +14,17 @@
 ---turns table form args from table keys and values into flags
 ---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string|nil
 ---adds args to the command
----@field add_args fun(cmd: string, args: string[]): string
+---@field add_args fun(cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 ---called when proper_pipes is false
----@field single_stdin fun(opts: SheluaOpts, cmd: string, input: string?): (string, any?)
+---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, input: string?): (string|any, any?)
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
----@field concat_cmd fun(opts: SheluaOpts, cmd: string, input: Shelua.PipeInput[]): (string, any?)
+---@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 ---runs the command and returns the result and exit code and signal
----@field post_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---@field post_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---runs the command and returns the result and exit code and signal
----@field pre_5_2_run fun(opts: SheluaOpts, cmd: string, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
 ---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 ---each string in this table must begin with '__' or it will be ignored
