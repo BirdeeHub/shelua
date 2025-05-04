@@ -238,7 +238,7 @@ local function resolve(tores, opts)
 	local input = {}
 	for k, v in ipairs(val.input or {}) do
 		if type(v) == "string" then
-			table.insert(input, { s = v, e = val.codes[k] or nil })
+			table.insert(input, { s = v, e = val.codes[k] })
 		elseif type(v) == "table" then
 			local c, m = resolve(v, opts)
 			table.insert(input, { c = c, m = m })
