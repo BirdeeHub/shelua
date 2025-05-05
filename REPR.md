@@ -174,16 +174,15 @@ after adding the newly resolved values to the command result being resolved.
 	---or `c`, an input command string
 	---@class Shelua.PipeInput
 	---string stdin to combine
-	---@field s? string
+	---@field s? string|any
 	---if string input came from a command,
 	---`e` will contain a table of all other command result fields
 	---such as `__exitcode`
-	---@field e? string
-	---
+	---@field e? table
 	---cmd to combine
 	---@field c? string|any
 	---optional 2nd return of concat_cmd
-	---@field m? string
+	---@field m? any
 
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true

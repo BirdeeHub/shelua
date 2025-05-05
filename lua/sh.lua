@@ -2,15 +2,15 @@
 ---or `c`, an input command string
 ---@class Shelua.PipeInput
 ---string stdin to combine
----@field s? string
+---@field s? string|any
 ---if string input came from a command,
 ---`e` will contain a table of all other command result fields
 ---such as `__exitcode`
----@field e? string
+---@field e? table
 ---cmd to combine
 ---@field c? string|any
 ---optional 2nd return of concat_cmd
----@field m? string
+---@field m? any
 
 ---@class Shelua.Repr
 ---escapes a string for the shell
@@ -237,11 +237,11 @@ local function resolve(tores, opts)
 	end
 	local input = {}
 	for k, v in ipairs(val.input or {}) do
-		if type(v) == "string" then
-			table.insert(input, { s = v, e = val.codes[k] })
-		elseif type(v) == "table" then
-			local c, m = resolve(v, opts)
+		if val.unres[k] then
+			local c, m = resolve(val.unres[k], opts)
 			table.insert(input, { c = c, m = m })
+		else
+			table.insert(input, { s = v, e = val.codes[k] })
 		end
 	end
 	return get_repr_fn(opts, "concat_cmd")(opts, val.cmd, input)
@@ -251,7 +251,7 @@ end
 ---@param input table
 ---@param opts SheluaOpts
 local function flatten(input, opts)
-	local result = { args = {}, input = {}, codes = {} }
+	local result = { args = {}, res = {}, unres = {}, codes = {} }
 
 	local function f(t)
 		local keys = {}
@@ -260,8 +260,9 @@ local function flatten(input, opts)
 			local v = t[k]
 			if type(v) == 'table' then
 				if unresolved[v] and opts.proper_pipes then
-					table.insert(result.input, v)
+					table.insert(result.unres, v)
 					table.insert(result.codes, false)
+					table.insert(result.res, false)
 				else
 					f(v)
 				end
@@ -276,7 +277,10 @@ local function flatten(input, opts)
 			keys[k] = true
 			if v ~= nil then
 				if k == '__input' then
-					table.insert(result.input, v)
+					table.insert(result.res, v)
+					if opts.proper_pipes then
+						table.insert(result.unres, false)
+					end
 					to_add = true
 				else
 					codes[k] = v
@@ -328,18 +332,25 @@ local function command(self, cmdstr, ...)
 			return res
 		end
 		local input = {}
+		local unres = {}
 		local codes = {}
-		for k, v in ipairs(preargs.input) do
+		for k, v in ipairs(preargs.res) do
 			table.insert(input, v)
 			table.insert(codes, preargs.codes[k])
+			if shmt.proper_pipes then
+				table.insert(unres, preargs.unres[k])
+			end
 		end
-		for k, v in ipairs(args.input) do
+		for k, v in ipairs(args.res) do
 			table.insert(input, v)
 			table.insert(codes, args.codes[k])
+			if shmt.proper_pipes then
+				table.insert(unres, args.unres[k])
+			end
 		end
 		local t = {}
 		if shmt.proper_pipes then
-			unresolved[t] = { cmd = cmd, input = input, codes = codes }
+			unresolved[t] = { cmd = cmd, unres = unres, input = input, codes = codes }
 		elseif is_5_2_plus then
 			local msg
 			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil, #codes > 0 and codes or nil)
