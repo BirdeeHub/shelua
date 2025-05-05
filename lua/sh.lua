@@ -14,7 +14,7 @@
 
 ---@class Shelua.Repr
 ---escapes a string for the shell
----@field escape fun(arg: any): string
+---@field escape fun(arg: any, opts: Shelua.Opts?): string
 ---turns table form args from table keys and values into flags
 ---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|nil
 ---adds args to the command
@@ -125,7 +125,7 @@ end
 ---@type Shelua.Repr
 local posix = {
 	-- nixpkgs.lib.escapeShellArg in lua
-	escape = function(arg)
+	escape = function(arg, opts)
 		local str = tostring(arg)
 		if str:match("^[%w,._+:@%%/-]+$") == nil then
 			return string.format("'%s'", str:gsub("'", "'\\''"))
@@ -141,7 +141,7 @@ local posix = {
 		k = (#k > 1 and '--' or '-') .. k
 		if type(a) == 'boolean' and a then return k end
 		if type(a) == 'string' then
-			return k .. "=" .. get_repr_fn(opts, "escape")(a)
+			return k .. "=" .. get_repr_fn(opts, "escape")(a, opts)
 		end
 		if type(a) == 'number' then return k .. '=' .. tostring(a) end
 		return nil
@@ -163,7 +163,7 @@ local posix = {
 		if #input == 1 then
 			local v = input[1]
 			if v.s then
-				return 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
+				return 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s, opts) .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
 			end
@@ -171,7 +171,7 @@ local posix = {
 			for i = 1, #input do
 				local v = input[i]
 				if v.s then
-					input[i] = 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s)
+					input[i] = 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s, opts)
 				elseif v.c then
 					---@diagnostic disable-next-line: assign-type-mismatch
 					input[i] = v.c
@@ -282,7 +282,7 @@ local function flatten(input, opts)
 					f(v)
 				end
 			else
-				table.insert(result.args, opts.escape_args and get_repr_fn(opts, "escape")(v) or v)
+				table.insert(result.args, opts.escape_args and get_repr_fn(opts, "escape")(v, opts) or v)
 			end
 		end
 		local codes = {}
