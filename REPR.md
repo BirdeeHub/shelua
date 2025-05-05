@@ -9,7 +9,7 @@ It also provides a built in representation for `posix` shells.
 
 These representation functions define the actual connective characters that join things together, after shelua has taken care of the structuring for you.
 
-To define and use a new representation, add the table to the `repr` table in the `SheluaOpts` table.
+To define and use a new representation, add the table to the `repr` table in the `Shelua.Opts` table.
 Then set the `shell` setting to the name of its key in that table.
 
 The first 3 functions to define if necessary are hopefully fairly self explanatory.
@@ -41,7 +41,7 @@ Our first 3 `Shelua.Repr` methods for `posix`: `arg_tbl`, `escape`, and `add_arg
 local posix = {
 	-- converts key and it's argument to "-k" or "-k=v" or "--key=v" or nil to ignore
 	---turns table form args from table keys and values into flags
-	---@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string?
+	---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string?
 	arg_tbl = function(opts, k, a)
 		k = (#k > 1 and '--' or '-') .. k
 		if type(a) == 'boolean' and a then return k end
@@ -65,7 +65,7 @@ local posix = {
 	---adds args to the command
 	---if you decide to represent your command (first return value) internally as something other than a string,
 	-- you should define __tostring metamethod for it to preserve error messages
-	---@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
+	---@field add_args fun(opts: Shelua.Opts, cmd: string, args: string[]): string|any
 	add_args = function(opts, cmd, args)
 		return cmd .. " " .. table.concat(args, " ")
 	end,
@@ -88,7 +88,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---called only when proper_pipes is false
 	---cmd is the result of add_args
 	---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
-	---@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
+	---@field single_stdin fun(opts: Shelua.Opts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
 	single_stdin = function(opts, cmd, inputs, codes)
 		local tmp
 		if inputs then
@@ -104,7 +104,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	end,
 	---runs the command and returns the result and exit code and signal
 	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
-	---@field post_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+	---@field post_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	post_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd, 'r')
 		local output, exit, status
@@ -123,7 +123,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---runs the command and returns the result and exit code and signal
 	---Should return the flags using the same format as io.popen does in 5.2+
 	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
-	---@field pre_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+	---@field pre_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 	pre_5_2_run = function(opts, cmd, tmp)
 		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
 		local output
@@ -146,7 +146,7 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
 	---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 	---each string in this table must begin with '__' or it will be ignored
-	---@field extra_cmd_results string[]|fun(opts: SheluaOpts): string[]
+	---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
 	extra_cmd_results = {},
 ```
 
@@ -188,7 +188,7 @@ after adding the newly resolved values to the command result being resolved.
 	---called only when proper_pipes is true
 	---may return an optional second value to be placed in another PipeInput, or returned to post_5_2_run or pre_5_2_run
 	-- cmd is the same type as the result of add_args
-	---@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
+	---@field concat_cmd fun(opts: Shelua.Opts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 	concat_cmd = function(opts, cmd, input)
 		if #input == 1 then
 			local v = input[1]

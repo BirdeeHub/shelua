@@ -18,7 +18,7 @@ It also contains a workaround to make the error codes still work prior to `lua 5
 
 It works with any "posix-enough" shell by default such as `bash`, `zsh`, and `dash`/`sh`.
 
-But it will not work by default with `fish`, `nushell`, `cmd` or `powershell` unless you define a representation for that shell.
+But it will not work by default with `fish`, `nushell`, `cmd` or `powershell` unless you define a [representation](./REPR.md) for that shell.
 
 It also exports a [small nix helper](#in-addition-to-the-library) that allows you
 to use `shelua` to write `nix` derivations in `lua` instead of `bash`.
