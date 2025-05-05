@@ -55,13 +55,13 @@
 ---@field __exitcode number
 ---@field __signal number
 
----@alias Shelua.IdxCmd fun(args: ...|nil):Shelua.Result
+---@alias Shelua.IdxCmd fun(...):Shelua.Result
 
 ---@alias Shelua.Result Shelua.BuiltinResults | table<string, Shelua.IdxCmd>
 
 ---@alias Shelua.Copier fun(opts: nil|Shelua.Opts|(fun(opts: Shelua.Opts):Shelua.Opts)):Shelua
 
----@alias Shelua.Shell table<string, Shelua.IdxCmd> | fun(cmd: string, args: ...|nil):Shelua.IdxCmd
+---@alias Shelua.Shell table<string, Shelua.IdxCmd> | fun(cmd: string, ...):Shelua.IdxCmd
 
 ---@alias Shelua Shelua.Shell | Shelua.Copier | Shelua.Opts
 
