@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.5](https://github.com/BirdeeHub/shelua/compare/v1.6.4...v1.6.5) (2025-05-05)
+
+
+### Bug Fixes
+
+* **refactor:** improved type annotations ([5008466](https://github.com/BirdeeHub/shelua/commit/50084665b0c332c038a77e9138f5bee08327ffd1))
+
 ## [1.6.4](https://github.com/BirdeeHub/shelua/compare/v1.6.3...v1.6.4) (2025-05-05)
 
 
