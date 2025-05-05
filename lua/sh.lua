@@ -16,27 +16,27 @@
 ---escapes a string for the shell
 ---@field escape fun(arg: any): string
 ---turns table form args from table keys and values into flags
----@field arg_tbl fun(opts: SheluaOpts, k: string, a: any): string|nil
+---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|nil
 ---adds args to the command
----@field add_args fun(opts: SheluaOpts, cmd: string, args: string[]): string|any
+---@field add_args fun(opts: Shelua.Opts, cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
 ---called when proper_pipes is false
 ---cmd is the result of add_args
 ---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
----@field single_stdin fun(opts: SheluaOpts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
+---@field single_stdin fun(opts: Shelua.Opts, cmd: string|any, inputs: string[]?, codes: table[]?): (string|any, any?)
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
----@field concat_cmd fun(opts: SheluaOpts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
+---@field concat_cmd fun(opts: Shelua.Opts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 ---runs the command and returns the result and exit code and signal
----@field post_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---@field post_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---runs the command and returns the result and exit code and signal
----@field pre_5_2_run fun(opts: SheluaOpts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---@field pre_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
 ---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 ---each string in this table must begin with '__' or it will be ignored
----@field extra_cmd_results string[]|fun(opts: SheluaOpts): string[]
+---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
 
----@class SheluaOpts
+---@class Shelua.Opts
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
 ---@field proper_pipes? boolean
 ---Assert that exit code is 0 or throw and error
@@ -49,6 +49,21 @@
 ---name of the repr implementation to choose
 ---@field shell? string
 ---@field repr? table<string, Shelua.Repr>
+
+---@class Shelua.BuiltinResults
+---@field __input string|any
+---@field __exitcode number
+---@field __signal number
+
+---@alias Shelua.IdxCmd fun(args: ...|nil):Shelua.Result
+
+---@alias Shelua.Result Shelua.BuiltinResults | table<string, Shelua.IdxCmd>
+
+---@alias Shelua.Copier fun(opts: nil|Shelua.Opts|(fun(opts: Shelua.Opts):Shelua.Opts)):Shelua
+
+---@alias Shelua.Shell table<string, Shelua.IdxCmd> | fun(cmd: string, args: ...|nil):Shelua.IdxCmd
+
+---@alias Shelua Shelua.Shell | Shelua.Copier | Shelua.Opts
 
 local is_5_2_plus = (function()
 	local major, minor = _VERSION:match("Lua (%d+)%.(%d+)")
@@ -97,7 +112,7 @@ local function tbl_get(t, default, ...)
 	return t or default
 end
 
----@param opts SheluaOpts
+---@param opts Shelua.Opts
 ---@param attr string
 ---@return function
 local get_repr_fn = function(opts, attr)
@@ -228,7 +243,7 @@ local unresolved = {} -- store unresolved results here, with unresolved result t
 -- recursively resolve inputs list, which can contain strings, or other tables to call resolve on
 -- should return final command string
 ---@param tores table
----@param opts SheluaOpts
+---@param opts Shelua.Opts
 local function resolve(tores, opts)
 	local val = unresolved[tores]
 	unresolved[tores] = nil
@@ -249,7 +264,7 @@ end
 
 -- converts nested tables into a flat list of arguments and concatenated input
 ---@param input table
----@param opts SheluaOpts
+---@param opts Shelua.Opts
 local function flatten(input, opts)
 	local result = { args = {}, res = {}, unres = {}, codes = {} }
 
@@ -403,7 +418,7 @@ local function command(self, cmdstr, ...)
 end
 
 local MT = {
-	---@type SheluaOpts
+	---@type Shelua.Opts
 	__metatable = {
 		-- escape unnamed shell arguments
 		-- NOTE: k = v table keys are still not escaped, k = v table values always are
@@ -432,7 +447,7 @@ local MT = {
 -- or first arg as table to tbl_extend settings then clone
 -- or first arg as function that recieves old settings to set new settings and clone
 ---@param self table
----@param cmd nil | table | fun(opts: SheluaOpts): table | string
+---@param cmd nil | table | fun(opts: Shelua.Opts): table | string
 ---@vararg any
 ---@return table | any
 MT.__call = function(self, cmd, ...)
@@ -456,4 +471,5 @@ MT.__call = function(self, cmd, ...)
 		return command(self, cmd, ...)
 	end
 end
+---@type Shelua
 return setmetatable({}, MT)
