@@ -195,7 +195,7 @@ after adding the newly resolved values to the command result being resolved.
 			local v = input[1]
 			if v.s then
 				local esc = opts.repr[opts.shell or "posix"].escape(v.s)
-				return "echo " .. esc .. " | " .. cmd
+				return 'printf "%s" ' .. esc .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
 			end
@@ -203,7 +203,7 @@ after adding the newly resolved values to the command result being resolved.
 			for i = 1, #input do
 				local v = input[i]
 				if v.s then
-					input[i] = "echo " .. opts.repr[opts.shell or "posix"].escape(v.s)
+					input[i] = 'printf "%s" ' .. opts.repr[opts.shell or "posix"].escape(v.s)
 				elseif v.c then
 					input[i] = v.c
 				end

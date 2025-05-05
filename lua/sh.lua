@@ -148,7 +148,7 @@ local posix = {
 		if #input == 1 then
 			local v = input[1]
 			if v.s then
-				return "echo " .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
+				return 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s) .. " | " .. cmd
 			else
 				return v.c .. " | " .. cmd
 			end
@@ -156,7 +156,7 @@ local posix = {
 			for i = 1, #input do
 				local v = input[i]
 				if v.s then
-					input[i] = "echo " .. get_repr_fn(opts, "escape")(v.s)
+					input[i] = 'printf "%s" ' .. get_repr_fn(opts, "escape")(v.s)
 				elseif v.c then
 					---@diagnostic disable-next-line: assign-type-mismatch
 					input[i] = v.c
