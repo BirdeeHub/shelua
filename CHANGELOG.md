@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/BirdeeHub/shelua/compare/v1.6.2...v1.6.3) (2025-05-05)
+
+
+### Bug Fixes
+
+* **repr_concat_cmd:** possible input types werent as expansive as they should have been ([5f52a6a](https://github.com/BirdeeHub/shelua/commit/5f52a6af1ba9d3d2620db514763a9a971117f332))
+
 ## [1.6.2](https://github.com/BirdeeHub/shelua/compare/v1.6.1...v1.6.2) (2025-05-05)
 
 
