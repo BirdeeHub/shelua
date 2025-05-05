@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.7](https://github.com/BirdeeHub/shelua/compare/v1.6.6...v1.6.7) (2025-05-05)
+
+
+### Bug Fixes
+
+* **repr:** ALL repr should be able to recieve opts ([dec64ca](https://github.com/BirdeeHub/shelua/commit/dec64ca61bb7a0743bb45540724b3ffdeb676bb6))
+
 ## [1.6.6](https://github.com/BirdeeHub/shelua/compare/v1.6.5...v1.6.6) (2025-05-05)
 
 
