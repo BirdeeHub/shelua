@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/BirdeeHub/shelua/compare/v1.6.1...v1.6.2) (2025-05-05)
+
+
+### Bug Fixes
+
+* **escaping:** use printf to make me feel better ([1ff955e](https://github.com/BirdeeHub/shelua/commit/1ff955e2699bc22361f3aa4a08451c7812367fd8))
+
 ## [1.6.1](https://github.com/BirdeeHub/shelua/compare/v1.6.0...v1.6.1) (2025-05-04)
 
 
