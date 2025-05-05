@@ -248,12 +248,16 @@ local function resolve(tores, opts)
 	local val = unresolved[tores]
 	unresolved[tores] = nil
 	if not val then
-		error("Can't resolve result table, due to an input command being part of another already resolved pipe")
+		error("Shelua Pipe Resolution Error: Can't resolve result table, due to an input command being part of another already resolved pipe")
 	end
 	local input = {}
 	for k, v in ipairs(val.input or {}) do
 		if val.unres[k] then
-			local c, m = resolve(val.unres[k], opts)
+			local ok, c, m = pcall(resolve, val.unres[k], opts)
+			if not ok then
+				error("Shelua Pipe Resolution Error: command " ..
+					tostring(val.cmd) .. " failed with message:\n" .. tostring(c))
+			end
 			table.insert(input, { c = c, m = m })
 		else
 			table.insert(input, { s = v, e = val.codes[k] })
@@ -330,7 +334,8 @@ local function command(self, cmdstr, ...)
 	return function(...)
 		local shmt = getmetatable(self)
 		local args = flatten({ ... }, shmt)
-		local cmd = type(cmdstr) == "string" and cmdstr or error("Shell commands must be strings!")
+		local cmd = type(cmdstr) == "string" and cmdstr or
+			error("Shelua Syntax Error: Shell commands (first argument or table index) must be strings!")
 		local fargs = {}
 		for _, v in ipairs(preargs.args) do
 			table.insert(fargs, v)
@@ -368,11 +373,13 @@ local function command(self, cmdstr, ...)
 			unresolved[t] = { cmd = cmd, unres = unres, input = input, codes = codes }
 		elseif is_5_2_plus then
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil, #codes > 0 and codes or nil)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
+				#codes > 0 and codes or nil)
 			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 		else
 			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil, #codes > 0 and codes or nil)
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
+				#codes > 0 and codes or nil)
 			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
 		end
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
