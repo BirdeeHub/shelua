@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.9](https://github.com/BirdeeHub/shelua/compare/v1.6.8...v1.6.9) (2025-05-08)
+
+
+### Bug Fixes
+
+* **feature:** repr arg_tbl may return a list if it cant be combined into 1 arg ([6b91756](https://github.com/BirdeeHub/shelua/commit/6b9175655fb31300da3a0a31e93cdbacb93f3206))
+
 ## [1.6.8](https://github.com/BirdeeHub/shelua/compare/v1.6.7...v1.6.8) (2025-05-05)
 
 
