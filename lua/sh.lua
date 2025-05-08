@@ -16,7 +16,8 @@
 ---escapes a string for the shell
 ---@field escape fun(arg: any, opts: Shelua.Opts?): string
 ---turns table form args from table keys and values into flags
----@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|nil
+---if returning a list, items will be added to args list in order
+---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|string[]?
 ---adds args to the command
 ---@field add_args fun(opts: Shelua.Opts, cmd: string, args: string[]): string|any
 ---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
@@ -312,7 +313,11 @@ local function flatten(input, opts)
 		for k, v in pairs(t) do
 			if not keys[k] and k:sub(1, 2) ~= '__' then
 				local key = get_repr_fn(opts, "arg_tbl")(opts, k, v)
-				if key then
+				if type(key) == "table" then
+					for _, val in ipairs(key) do
+						table.insert(result.args, val)
+					end
+				elseif key then
 					table.insert(result.args, key)
 				end
 			end

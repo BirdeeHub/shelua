@@ -40,8 +40,9 @@ Our first 3 `Shelua.Repr` methods for `posix`: `arg_tbl`, `escape`, and `add_arg
 ---@type Shelua.Repr
 local posix = {
 	-- converts key and it's argument to "-k" or "-k=v" or "--key=v" or nil to ignore
-	---turns table form args from table keys and values into flags
-	---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string?
+	-- turns table form args from table keys and values into flags
+	-- if returning a list, items will be added to args list in order
+	---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|string[]?
 	arg_tbl = function(opts, k, a)
 		k = (#k > 1 and '--' or '-') .. k
 		if type(a) == 'boolean' and a then return k end
