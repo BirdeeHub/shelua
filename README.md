@@ -169,6 +169,9 @@ sh.proper_pipes = false
 -- a list of functions to run in order on the command before running it.
 -- each one recieves the final command and is to return a string representing the new one
 sh.transforms = {}
+-- because the actual metatable is inaccessible, you can add extra values here
+-- will apply to the main sh variable, and all sub commands
+sh.meta = {}
 ---Allows the definition of new shell backends.
 ---@type table<string, Shelua.Repr>
 sh.repr = { posix = { --[[...]] } }

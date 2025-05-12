@@ -50,6 +50,8 @@
 ---name of the repr implementation to choose
 ---@field shell? string
 ---@field repr? table<string, Shelua.Repr>
+---extra values for metatable
+---@field meta? metatable
 
 ---@class Shelua.BuiltinResults
 ---@field __input string|any
@@ -391,7 +393,7 @@ local function command(self, cmdstr, ...)
 		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
 			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 		end
-		return setmetatable(t, {
+		local mt = {
 			__metatable = shmt,
 			__index = function(s, c)
 				if not shmt.proper_pipes then
@@ -426,7 +428,13 @@ local function command(self, cmdstr, ...)
 			__concat = function(a, b)
 				return tostring(a) .. tostring(b)
 			end,
-		})
+		}
+		for k, v in pairs(shmt.meta or {}) do
+			if not mt[k] then
+				mt[k] = v
+			end
+		end
+		return setmetatable(t, mt)
 	end
 end
 
@@ -444,7 +452,8 @@ local MT = {
 		-- each one recieves the final command and is to return a string representing the new one
 		transforms = {},
 		shell = "posix",
-		repr = { posix = posix }
+		repr = { posix = posix },
+		meta = {}
 	},
 	-- set hook for index as shell command
 	__index = function(self, cmd)
@@ -467,6 +476,11 @@ MT.__call = function(self, cmd, ...)
 	if cmd == nil then
 		local newMT = deepcopy(MT)
 		newMT.__metatable = deepcopy(getmetatable(self))
+		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
+			if not newMT[k] then
+				newMT[k] = v
+			end
+		end
 		return setmetatable({}, newMT)
 	elseif type(cmd) == 'table' then
 		local newMT = deepcopy(MT)
@@ -475,10 +489,20 @@ MT.__call = function(self, cmd, ...)
 			config[k] = v
 		end
 		newMT.__metatable = config
+		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
+			if not newMT[k] then
+				newMT[k] = v
+			end
+		end
 		return setmetatable({}, newMT)
 	elseif type(cmd) == 'function' then
 		local newMT = deepcopy(MT)
 		newMT.__metatable = cmd(deepcopy(getmetatable(self)))
+		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
+			if not newMT[k] then
+				newMT[k] = v
+			end
+		end
 		return setmetatable({}, newMT)
 	else
 		return command(self, cmd, ...)
