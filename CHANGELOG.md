@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/BirdeeHub/shelua/compare/v1.6.10...v1.7.0) (2025-05-12)
+
+
+### Features
+
+* **meta:** allow users to define extra actual metatable values ([0c0942b](https://github.com/BirdeeHub/shelua/commit/0c0942b1198256bc073d37c9d07e66eabc7b1d3b))
+
 ## [1.6.10](https://github.com/BirdeeHub/shelua/compare/v1.6.9...v1.6.10) (2025-05-12)
 
 
