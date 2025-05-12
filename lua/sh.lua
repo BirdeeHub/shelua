@@ -292,8 +292,9 @@ local function flatten(input, opts)
 		end
 		local codes = {}
 		local to_add = false
+		local _ = t.__input
 		for _, k in ipairs(cmd_result_names(opts)) do
-			local v = t[k]
+			local v = rawget(t, k)
 			keys[k] = true
 			if v ~= nil then
 				if k == '__input' then
