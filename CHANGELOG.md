@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.10](https://github.com/BirdeeHub/shelua/compare/v1.6.9...v1.6.10) (2025-05-12)
+
+
+### Bug Fixes
+
+* **single_stdin:** make sure codes doesnt get __index function results ([be219d3](https://github.com/BirdeeHub/shelua/commit/be219d390b69f56301b575b475b446005712f001))
+
 ## [1.6.9](https://github.com/BirdeeHub/shelua/compare/v1.6.8...v1.6.9) (2025-05-08)
 
 
