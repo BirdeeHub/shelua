@@ -1,3 +1,6 @@
 **/result
 **/repl-result-out
 **/.nvim.lua
+**/.cache
+**/compile_commands.json
+**/build

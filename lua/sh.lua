@@ -28,6 +28,10 @@
 ---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 ---called when proper_pipes is true
 ---@field concat_cmd fun(opts: Shelua.Opts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
+---a list of functions to run in order on the command before running it.
+---each one recieves the previous value and returns a new one.
+---they are ran after concat_cmd or single_stdin and before the post_5_2_run and pre_5_2_run functions
+---@field transforms? (fun(cmd: string|any): string|any)[]
 ---runs the command and returns the result and exit code and signal
 ---@field post_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
 ---runs the command and returns the result and exit code and signal
@@ -37,21 +41,23 @@
 ---each string in this table must begin with '__' or it will be ignored
 ---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
 
----@class Shelua.Opts
+---@class Shelua.OptsClass
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
 ---@field proper_pipes? boolean
 ---Assert that exit code is 0 or throw and error
 ---@field assert_zero? boolean
 -- also escape unnamed shell arguments
 ---@field escape_args? boolean
--- a list of functions to run in order on the command before running it.
--- each one recieves the final command and is to return a string representing the new one
----@field transforms? (fun(cmd: string): string)[]
 ---name of the repr implementation to choose
 ---@field shell? string
 ---@field repr? table<string, Shelua.Repr>
----extra values for metatable
+---WARNING: DANGER YOU CAN BREAK A SHELUA INSTANCE THIS WAY
+---contains the metatable of this shelua instance
+---@field meta_main? metatable
+---applied to each new command result's metatable
 ---@field meta? metatable
+
+---@alias Shelua.Opts Shelua.OptsClass | table
 
 ---@class Shelua.BuiltinResults
 ---@field __input string|any
@@ -102,6 +108,19 @@ local function deepcopy(orig, seen)
 	return copy
 end
 
+local function recUpdate(t, ...)
+	for _, src in ipairs({...}) do
+		for k, v in pairs(src) do
+			if type(v) == "table" and type(t[k]) == "table" then
+				recUpdate(t[k], v)
+			else
+				t[k] = v
+			end
+		end
+	end
+	return t
+end
+
 ---@param t table
 ---@param default any
 ---@vararg any
@@ -123,6 +142,24 @@ local get_repr_fn = function(opts, attr)
 		error("Shelua Repr Error: " ..
 			tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
 	end, "repr", "posix", attr), "repr", opts.shell or "posix", attr)
+end
+
+local function cmd_result_names(opts)
+	local names = { "__input", "__exitcode", "__signal" }
+	local xtra = tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")
+	for _, v in ipairs(type(xtra) == "function" and xtra(opts) or xtra) do
+		if type(v) == "string" and v:sub(1, 2) == '__' then
+			table.insert(names, v)
+		end
+	end
+	return names
+end
+
+local function check_if_cmd_result(opts, k)
+	for _, v in ipairs(cmd_result_names(opts)) do
+		if k == v then return true end
+	end
+	return false
 end
 
 ---@type Shelua.Repr
@@ -220,54 +257,10 @@ local posix = {
 		}
 	end,
 	extra_cmd_results = {},
+	transforms = {},
 }
 
-local function cmd_result_names(opts)
-	local names = { "__input", "__exitcode", "__signal" }
-	local xtra = tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")
-	for _, v in ipairs(type(xtra) == "function" and xtra(opts) or xtra) do
-		if type(v) == "string" and v:sub(1, 2) == '__' then
-			table.insert(names, v)
-		end
-	end
-	return names
-end
-
-local function check_if_cmd_result(opts, k)
-	for _, v in ipairs(cmd_result_names(opts)) do
-		if k == v then return true end
-	end
-	return false
-end
-
 local unresolved = {} -- store unresolved results here, with unresolved result table as key
-
--- get associated { cmd, inputs } from unresolved table.
--- recursively resolve inputs list, which can contain strings, or other tables to call resolve on
--- should return final command string
----@param tores table
----@param opts Shelua.Opts
-local function resolve(tores, opts)
-	local val = unresolved[tores]
-	unresolved[tores] = nil
-	if not val then
-		error("Shelua Pipe Resolution Error: Can't resolve result table, due to an input command being part of another already resolved pipe")
-	end
-	local input = {}
-	for k, v in ipairs(val.input or {}) do
-		if val.unres[k] then
-			local ok, c, m = pcall(resolve, val.unres[k], opts)
-			if not ok then
-				error("Shelua Pipe Resolution Error: command " ..
-					tostring(val.cmd) .. " failed with message:\n" .. tostring(c))
-			end
-			table.insert(input, { c = c, m = m })
-		else
-			table.insert(input, { s = v, e = val.codes[k] })
-		end
-	end
-	return get_repr_fn(opts, "concat_cmd")(opts, val.cmd, input)
-end
 
 -- converts nested tables into a flat list of arguments and concatenated input
 ---@param input table
@@ -331,13 +324,140 @@ local function flatten(input, opts)
 	return result
 end
 
+-- get associated { cmd, inputs } from unresolved table.
+-- recursively resolve inputs list, which can contain strings, or other tables to call resolve on
+-- should return final command string
+---@param tores table
+---@param opts Shelua.Opts
+local function resolve(tores, opts)
+	local val = unresolved[tores]
+	unresolved[tores] = nil
+	if not val then
+		error(
+		"Shelua Pipe Resolution Error: Can't resolve result table, due to an input command being part of another already resolved pipe")
+	end
+	local input = {}
+	for k, v in ipairs(val.input or {}) do
+		if val.unres[k] then
+			local ok, c, m = pcall(resolve, val.unres[k], opts)
+			if not ok then
+				error("Shelua Pipe Resolution Error: command " ..
+					tostring(val.cmd) .. " failed with message:\n" .. tostring(c))
+			end
+			table.insert(input, { c = c, m = m })
+		else
+			table.insert(input, { s = v, e = val.codes[k] })
+		end
+	end
+	return get_repr_fn(opts, "concat_cmd")(opts, val.cmd, input)
+end
+
+local command
+
+local cmd_mt = {
+	__index = function(self, c)
+		local opts = getmetatable(self)
+		if not opts.proper_pipes then
+			return command(self, c)
+		end
+		if check_if_cmd_result(opts, c) then
+			local apply = function(com)
+				local transforms = opts.transforms
+				if transforms then print("Shelua Deprecation: transforms option moved to be a repr-specific option") end
+				transforms = tbl_get(opts, transforms or {}, "repr", opts.shell or "posix", "transforms")
+				for _, f in ipairs(transforms) do
+					com = f(com)
+				end
+				return com
+			end
+			local cmd, msg = resolve(self, opts)
+			local res
+			if is_5_2_plus then
+				res = get_repr_fn(opts, "post_5_2_run")(opts, apply(cmd), msg)
+			else
+				res = get_repr_fn(opts, "pre_5_2_run")(opts, apply(cmd), msg)
+			end
+			for k, v in pairs(res or {}) do
+				rawset(self, k, v)
+			end
+			if opts.assert_zero and rawget(self, "__exitcode") ~= 0 then
+				error("Command " ..
+					tostring(cmd) ..
+					" exited with non-zero status: " .. tostring(rawget(self, "__exitcode")))
+			end
+			return rawget(self, c)
+		else
+			return command(self, c)
+		end
+	end,
+	__tostring = function(self)
+		-- return trimmed command output as a string
+		return self.__input:match('^%s*(.-)%s*$')
+	end,
+	__concat = function(a, b)
+		return tostring(a) .. tostring(b)
+	end,
+}
+
+local MT = {
+	---@type Shelua.Opts
+	__metatable = {
+		-- escape unnamed shell arguments
+		-- NOTE: k = v table keys are still not escaped, k = v table values always are
+		escape_args = false,
+		-- Assert that exit code is 0 or throw an error
+		assert_zero = false,
+		-- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
+		proper_pipes = false,
+		shell = "posix",
+		repr = { posix = posix },
+		meta = {},
+		meta_main = {}
+	},
+	-- set hook for index as shell command
+	__index = function(self, cmd)
+		return command(self, cmd)
+	end,
+	-- change settings by assigning them to table
+	__newindex = function(self, key, value)
+		if type(key) == "string" and key:sub(1, 3) == "_x_" then
+			local fkey = key:sub(4)
+			local opts = getmetatable(self)
+			if type(rawget(opts, fkey)) ~= "table" then
+				opts[fkey] = value
+			else
+				recUpdate(opts[fkey], value)
+			end
+		else
+			getmetatable(self)[key] = value
+		end
+	end,
+}
+
+local function make_meta(opts, main)
+	local meta = main and deepcopy(MT) or deepcopy(cmd_mt)
+	if opts then
+		meta.__metatable = opts
+	end
+	local new = main and ((meta.__metatable or {}).meta_main or {}) or ((meta.__metatable or {}).meta or {})
+	for key, value in pairs(new) do
+		if key ~= "__metatable" and not meta[key] then
+			meta[key] = value
+		end
+	end
+	if main then
+		(meta.__metatable or {}).meta_main = meta
+	end
+	return meta
+end
+
 -- returns a function that executes the command with given args and returns its
 -- output, exit status etc
 ---@param self any
 ---@param cmdstr any
 ---@vararg any
 ---@return function
-local function command(self, cmdstr, ...)
+command = function(self, cmdstr, ...)
 	local preargs = flatten({ ... }, getmetatable(self))
 	return function(...)
 		local shmt = getmetatable(self)
@@ -352,13 +472,6 @@ local function command(self, cmdstr, ...)
 			table.insert(fargs, v)
 		end
 		cmd = get_repr_fn(shmt, "add_args")(shmt, cmd, fargs)
-		local apply = function(c)
-			local res = c
-			for _, f in ipairs(shmt.transforms or {}) do
-				res = f(res)
-			end
-			return res
-		end
 		local input = {}
 		local unres = {}
 		local codes = {}
@@ -379,134 +492,52 @@ local function command(self, cmdstr, ...)
 		local t = {}
 		if shmt.proper_pipes then
 			unresolved[t] = { cmd = cmd, unres = unres, input = input, codes = codes }
-		elseif is_5_2_plus then
-			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
-				#codes > 0 and codes or nil)
-			t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
 		else
-			local msg
-			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
-				#codes > 0 and codes or nil)
-			t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
-		end
-		if not shmt.proper_pipes and shmt.assert_zero and t.__exitcode ~= 0 then
-			error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
-		end
-		local mt = {
-			__metatable = shmt,
-			__index = function(s, c)
-				if not shmt.proper_pipes then
-					return command(s, c)
+			local apply = function(com)
+				local transforms = shmt.transforms
+				if transforms then print("Shelua Deprecation: transforms option moved to be a repr-specific option") end
+				transforms = tbl_get(shmt, transforms or {}, "repr", shmt.shell or "posix", "transforms")
+				for _, f in ipairs(transforms) do
+					com = f(com)
 				end
-				if check_if_cmd_result(shmt, c) then
-					local msg
-					cmd, msg = resolve(t, shmt)
-					local res
-					if is_5_2_plus then
-						res = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
-					else
-						res = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
-					end
-					for k, v in pairs(res or {}) do
-						rawset(t, k, v)
-					end
-					if shmt.assert_zero and rawget(t, "__exitcode") ~= 0 then
-						error("Command " ..
-							tostring(cmd) ..
-							" exited with non-zero status: " .. tostring(rawget(t, "__exitcode")))
-					end
-					return rawget(t, c)
-				else
-					return command(s, c)
-				end
-			end,
-			__tostring = function(s)
-				-- return trimmed command output as a string
-				return s.__input:match('^%s*(.-)%s*$')
-			end,
-			__concat = function(a, b)
-				return tostring(a) .. tostring(b)
-			end,
-		}
-		for k, v in pairs(shmt.meta or {}) do
-			if not mt[k] then
-				mt[k] = v
+				return com
+			end
+			if is_5_2_plus then
+				local msg
+				cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
+					#codes > 0 and codes or nil)
+				t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
+			else
+				local msg
+				cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
+					#codes > 0 and codes or nil)
+				t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
+			end
+			if shmt.assert_zero and t.__exitcode ~= 0 then
+				error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 			end
 		end
-		return setmetatable(t, mt)
+		return setmetatable(t, make_meta(shmt))
 	end
 end
-
-local MT = {
-	---@type Shelua.Opts
-	__metatable = {
-		-- escape unnamed shell arguments
-		-- NOTE: k = v table keys are still not escaped, k = v table values always are
-		escape_args = false,
-		-- Assert that exit code is 0 or throw an error
-		assert_zero = false,
-		-- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
-		proper_pipes = false,
-		-- a list of functions to run in order on the command before running it.
-		-- each one recieves the final command and is to return a string representing the new one
-		transforms = {},
-		shell = "posix",
-		repr = { posix = posix },
-		meta = {}
-	},
-	-- set hook for index as shell command
-	__index = function(self, cmd)
-		return command(self, cmd)
-	end,
-	-- change settings by assigning them to table
-	__newindex = function(self, k, v)
-		getmetatable(self)[k] = v
-	end,
-}
 -- allow to call sh with a string to run shell commands
 -- or no arguments to return clone
 -- or first arg as table to tbl_extend settings then clone
 -- or first arg as function that recieves old settings to set new settings and clone
 ---@param self table
----@param cmd nil | table | fun(opts: Shelua.Opts): table | string
+---@param cmd nil | table | string | fun(opts: Shelua.Opts): table
 ---@vararg any
 ---@return table | any
 MT.__call = function(self, cmd, ...)
 	if cmd == nil then
-		local newMT = deepcopy(MT)
-		newMT.__metatable = deepcopy(getmetatable(self))
-		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
-			if not newMT[k] then
-				newMT[k] = v
-			end
-		end
-		return setmetatable({}, newMT)
+		return setmetatable({}, make_meta(deepcopy(getmetatable(self)), true))
 	elseif type(cmd) == 'table' then
-		local newMT = deepcopy(MT)
-		local config = deepcopy(getmetatable(self))
-		for k, v in pairs(cmd) do
-			config[k] = v
-		end
-		newMT.__metatable = config
-		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
-			if not newMT[k] then
-				newMT[k] = v
-			end
-		end
-		return setmetatable({}, newMT)
+		return setmetatable({}, make_meta(recUpdate(deepcopy(getmetatable(self)), cmd), true))
 	elseif type(cmd) == 'function' then
-		local newMT = deepcopy(MT)
-		newMT.__metatable = cmd(deepcopy(getmetatable(self)))
-		for k, v in pairs((newMT.__metatable or {}).meta or {}) do
-			if not newMT[k] then
-				newMT[k] = v
-			end
-		end
-		return setmetatable({}, newMT)
+		return setmetatable({}, make_meta(cmd(deepcopy(getmetatable(self))), true))
 	else
 		return command(self, cmd, ...)
 	end
 end
 ---@type Shelua
-return setmetatable({}, MT)
+return setmetatable({}, make_meta(false, true))

@@ -166,16 +166,19 @@ sh.escape_args = false
 sh.assert_zero = false
 -- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
 sh.proper_pipes = false
--- a list of functions to run in order on the command before running it.
--- each one recieves the final command and is to return a string representing the new one
-sh.transforms = {}
--- because the actual metatable is inaccessible, you can add extra values here
--- will apply to the main sh variable, and all sub commands
-sh.meta = {}
 ---Allows the definition of new shell backends.
 ---@type table<string, Shelua.Repr>
 sh.repr = { posix = { --[[...]] } }
 sh.shell = "posix"
+
+-- because the actual metatable is inaccessible
+-- this contains the metatable of this shelua instance
+-- will apply to the main sh variable
+---WARNING: DANGER YOU CAN BREAK A SHELUA INSTANCE THIS WAY
+sh.meta_main = {}
+-- applies to actual metatable of each command result created by this sh instance.
+-- CANNOT set __metatable __index __tostring or __concat
+sh.meta = {}
 ```
 
 For info on `sh.repr`, see [Shell Representation docs](./REPR.md)
@@ -197,10 +200,10 @@ Or you can call it with a function that receives the old settings table and retu
 local nsh = require('sh')()
 nsh.assert_zero = true
 -- or
+local newersh = require('sh')({assert_zero = true})
+-- or
 local newsh = require('sh')()
 getmetatable(newsh).assert_zero = true
--- or
-local newersh = require('sh')({assert_zero = true})
 -- or
 local evennewersh = require('sh')(function(s) s.assert_zero = true return s end)
 
@@ -208,6 +211,29 @@ local evennewersh = require('sh')(function(s) s.assert_zero = true return s end)
 print(require('sh')["false"]().__exitcode)
 -- would throw an error due to assert_zero = true
 print(nsh["false"]().__exitcode)
+```
+
+This function syntax used for cloning can also be used for modification of an existing instance.
+
+```lua
+require('sh')(function(opts)
+	opts.assert_zero = true
+	return opts
+end, true) -- optional second argument meaning "do not clone"
+require('sh')({escape_args = true}, true)
+```
+
+When setting settings via this method:
+```lua
+local sh = require('sh')
+sh.repr = { newshell = { ... } }
+```
+This would overwrite the entire `repr` table, erasing any already there.
+
+You may prefix the setting name with `_x_` to deep extend the tables together instead.
+```lua
+local sh = require('sh')
+sh._x_repr = { newshell = { ... } }
 ```
 
 ## For nix users
@@ -264,6 +290,11 @@ You should provide the interpreter path via something like this to get the most 
 - `os.read_file(filename) -> string` and `os.readable(filename) -> boolean` will be added
 
 - `os.write_file(opts, filename, contents)` will be added where opts is `{ append = false, newline = true }` by default
+
+- `os.env` will be added. Setting values in the table will set the environment variable
+	in the process environment, setting one to nil will unset it,
+	reading will return the environment variable's value.
+	Analogous to `vim.env` in neovim.
 
 - The path to the shell hooks will be added to the shelua library's metatable (via `sh.stdenv_shell_hooks_path = shell_hooks`), for use in redefining the existing transform which adds them if desired.
 
