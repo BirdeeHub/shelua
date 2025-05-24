@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/BirdeeHub/shelua/compare/v1.7.0...v1.8.0) (2025-05-24)
+
+
+### Features
+
+* **sh.meta_main:** split sh.meta into sh.meta and sh.meta_main ([f2e6aee](https://github.com/BirdeeHub/shelua/commit/f2e6aeee994ae5c4fbd154d5ddd8244e32d0b3f1))
+* **sh.meta_main:** split sh.meta into sh.meta and sh.meta_main ([8969172](https://github.com/BirdeeHub/shelua/commit/8969172a1db8330112f78dba07a7981f2cdce62b))
+
 ## [1.7.0](https://github.com/BirdeeHub/shelua/compare/v1.6.10...v1.7.0) (2025-05-12)
 
 
