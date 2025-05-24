@@ -1,9 +1,10 @@
 -- lua `stdenv` for runLuaCommand
 return function(shell_hooks)
   _G.sh = require("sh")
-  string.escapeShellArg = getmetatable(sh).repr.posix.escape
-  sh.assert_zero = true
-  sh.stdenv_shell_hooks_path = shell_hooks
+  local sh_settings = getmetatable(sh)
+  string.escapeShellArg = sh_settings.repr.posix.escape
+  sh_settings.assert_zero = true
+  sh_settings.stdenv_shell_hooks_path = shell_hooks
   local shell = os.getenv("SHELL")
   local function with_shell_hooks(cmd)
     return string.format(
@@ -12,7 +13,7 @@ return function(shell_hooks)
       string.escapeShellArg(". " .. shell_hooks .. "\n" .. cmd)
     )
   end
-  sh.transforms = { with_shell_hooks }
+  sh_settings.repr.posix.transforms = { with_shell_hooks }
   function os.write_file(opts, filename, content)
     local file = assert(io.open(filename, opts.append and "a" or "w"))
     file:write(content .. (opts.newline ~= false and "\n" or ""))
@@ -54,12 +55,12 @@ return function(shell_hooks)
       end
     end
     sh.rm("-rf", temp)
-    sh.transforms = {}
+    sh_settings.repr.posix.transforms = {}
     os.remove(shell_hooks)
     assert(ok, tostring(err))
   else
     sh.rm("-rf", temp)
-    sh.transforms = {}
+    sh_settings.repr.posix.transforms = {}
     os.remove(shell_hooks)
     error(tostring(err))
   end

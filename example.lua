@@ -40,17 +40,18 @@ print(sh.echo 'Hello World' :sed "s/Hello World/Goodbye Universe/g")
 sh.escape_args = false
 
 -- cloning sh with new settings, and "proper_pipes" setting (and others)
-local nsh = sh({
-  proper_pipes = true,
-  escape_args = true,
-  assert_zero = true,
-  transforms = {
+local nsh = sh(function (opts)
+  opts.proper_pipes = true
+  opts.escape_args = true
+  opts.assert_zero = true
+  opts.repr[opts.shell or "posix"].transforms = {
     function(cmd)
       print(cmd)
       return cmd
     end
   }
-})
+  return opts
+end)
 print(nsh.echo 'Hello world' :sed "s/Hello/Goodbye/g")
 print(nsh.sed(nsh.echo 'Hello world', nsh.echo 'Hello world', "s/Hello/Goodbye/g"))
 print(nsh.echo 'Hello World' :sed(nsh.echo 'Hello World', nsh.echo 'Hello World' :sed(nsh.echo 'Hello World', "s/Hello/Goodbye/g"), "s/World/Universe/g"))

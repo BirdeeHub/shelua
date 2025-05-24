@@ -12,13 +12,13 @@
     forAllSys = nixpkgs.lib.genAttrs nixpkgs.lib.platforms.all;
     overlay = final: prev: {
       shelua = prev.callPackage ./. { lua = prev.lua5_2; };
-      runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
+      runLuaCommand =  prev.callPackage ./nix { inherit n2l; };
     };
     overlay1 = final: prev: {
       shelua = prev.callPackage ./. { lua = prev.lua5_2; };
     };
     overlay2 = final: prev: {
-      runLuaCommand =  prev.callPackage ./runLuaCommand.nix { inherit n2l; };
+      runLuaCommand =  prev.callPackage ./nix { inherit n2l; };
     };
   in {
     overlays.default = overlay;
@@ -36,6 +36,24 @@
       builtins.listToAttrs
     ] // {
       default = pkgs.shelua;
+    });
+    devShells = forAllSys (system: let
+      pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
+    in {
+      default = pkgs.mkShell {
+        name = "testshell";
+        packages = with pkgs; [ bear ];
+        inputsFrom = [ ];
+        luaInterpreter = (pkgs.lua5_2.withPackages (ps: with ps; [inspect])).interpreter;
+        shellHook = ''
+          make_cc() {
+            pushd "$(git rev-parse --show-toplevel || echo ".")"
+            mkdir -p ./build
+            bear -- $CC -O2 -fPIC -shared -o ./build/env.so ./nix/env.c -I"$(dirname $luaInterpreter)/../include" "$@"
+            popd
+          }
+        '';
+      };
     });
     checks = forAllSys (system: let
       pkgs = import nixpkgs { inherit system; overlays = [ overlay ]; };
@@ -58,6 +76,9 @@
         local outcat = outbin .. "/newcat"
         local outecho = outbin .. "/newecho"
         sh.mkdir("-p", outbin)
+        os.env.FRIEND = "everyone"
+        assert(os.getenv("FRIEND") == os.env.FRIEND, "os.env failed")
+        print(os.getenv("FRIEND"))
         os.write_file({}, outfile, [[#!${pkgs.bash}/bin/bash]])
         os.write_file({ append = true, }, outfile, [[echo "hello world!"]])
         os.write_file({ append = true, }, outfile, [[cat ]] .. outdrv)

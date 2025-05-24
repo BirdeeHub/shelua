@@ -149,6 +149,11 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	---each string in this table must begin with '__' or it will be ignored
 	---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
 	extra_cmd_results = {},
+	---a list of functions to run in order on the command before running it.
+	---each one recieves the previous value and returns a new one.
+	---they are ran after concat_cmd or single_stdin and before the post_5_2_run and pre_5_2_run functions
+	---@field transforms? (fun(cmd: string|any): string|any)[]
+	transforms = {},
 ```
 
 And the final method, `concat_cmd`. This is the counterpart to `single_stdin`.
