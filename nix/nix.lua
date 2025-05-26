@@ -1,11 +1,14 @@
 -- lua `stdenv` for runLuaCommand
-return function(shell_hooks)
+return function(outdir, tempdir, shell_hooks)
+  _G.out = outdir
+  _G.temp = tempdir
+  os.env = require("env")
   _G.sh = require("sh")
   local sh_settings = getmetatable(sh)
   string.escapeShellArg = sh_settings.repr.posix.escape
   sh_settings.assert_zero = true
   sh_settings.stdenv_shell_hooks_path = shell_hooks
-  local shell = os.getenv("SHELL")
+  local shell = os.env.SHELL
   local function with_shell_hooks(cmd)
     return string.format(
       "%s -c %s",
@@ -35,9 +38,9 @@ return function(shell_hooks)
     end
     return false
   end
-  local ok, err = pcall(dofile, os.getenv("luaBuilderDataPath"))
+  local ok, err = pcall(dofile, os.env.luaBuilderDataPath)
   if not ok then
-    ok, err = pcall((loadstring or load), os.getenv("luaBuilderData"))
+    ok, err = pcall((loadstring or load), os.env.luaBuilderData)
     if ok and err then
       ok, err = pcall(err)
     end
@@ -45,11 +48,11 @@ return function(shell_hooks)
   if ok then
     _G.drv = err
     package.preload.drv = function() return _G.drv end
-    local bp = os.getenv("luaBuilderPath")
+    local bp = os.env.luaBuilderPath
     if bp then
       ok, err = pcall(dofile, bp)
     else
-      ok, err = pcall((loadstring or load), os.getenv("luaBuilder"))
+      ok, err = pcall((loadstring or load), os.env.luaBuilder)
       if ok and err then
         ok, err = pcall(err)
       end

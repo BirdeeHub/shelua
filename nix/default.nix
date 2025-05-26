@@ -21,19 +21,18 @@ in {
   ];
   passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
-    LUA_SHELL_HOOKS=$(mktemp)
     TEMPDIR=$(mktemp -d)
     mkdir -p "$TEMPDIR"
-    declare -f > "$LUA_SHELL_HOOKS"
-    envlib="$(realpath ./env.so)"
-    $CC -O2 -fPIC -shared -o "$envlib" "${./env.c}" -I"$(dirname $luaInterpreter)/../include"
-    echo "_G.temp = '$TEMPDIR'
-    _G.out = '${placeholder "out"}'
-    os.env = package.loadlib('$envlib', 'luaopen_env')()
-    package.preload.sh = function() return dofile('${../lua/sh.lua}') end
+    STDENV_SHELL_HOOKS=$(mktemp)
+    declare -f > "$STDENV_SHELL_HOOKS"
+    envdir=$(mktemp -d)
+    mkdir -p "$envdir"
+    $CC -O2 -fPIC -shared -o "$envdir/env.so" '${./env.c}' -I"$(dirname $luaInterpreter)/../include"
+    echo "package.cpath = '$envdir/?.so;' .. package.cpath
+    package.path = '${../lua}/?.lua;' .. package.path
     local ok, val = pcall(dofile, '${./nix.lua}')
     assert(ok, val)
-    ok, val = pcall(val, '$LUA_SHELL_HOOKS')
+    ok, val = pcall(val, '$out', '$TEMPDIR', '$STDENV_SHELL_HOOKS')
     assert(ok, val)
     " | "$luaInterpreter" -
   '';

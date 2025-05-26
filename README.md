@@ -160,9 +160,9 @@ local sh = require('sh')
 
 -- default values
 -- escape unnamed shell arguments
--- NOTE: k = v table keys are still not escaped, k = v table values always are
+-- NOTE: k = v table values are separately handled by repr arg_table function
 sh.escape_args = false
--- Assert that exit code is 0 or throw and error
+-- Assert that exit code is 0 or throw an error
 sh.assert_zero = false
 -- proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
 sh.proper_pipes = false
