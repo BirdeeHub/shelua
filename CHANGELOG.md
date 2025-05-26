@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/BirdeeHub/shelua/compare/v1.8.0...v1.8.1) (2025-05-26)
+
+
+### Bug Fixes
+
+* **nix:** slight improvements to runLuaCommand lua stdenv ([5da3ac0](https://github.com/BirdeeHub/shelua/commit/5da3ac040574886d0d3453202d9bf146f013dc60))
+
 ## [1.8.0](https://github.com/BirdeeHub/shelua/compare/v1.7.0...v1.8.0) (2025-05-24)
 
 
