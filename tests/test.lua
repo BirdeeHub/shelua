@@ -1,5 +1,3 @@
-local test = require('gambiarra')
-
 local tests_passed = 0
 local tests_failed = 0
 require('gambiarra')(function(e, test, msg)
@@ -21,6 +19,8 @@ local sh = require('sh')(function(s)
 	s.shell = "test"
 	return s
 end)
+
+local test = require('gambiarra')
 
 test('Check command output', function()
 	ok(tostring(sh.seq(1, 5)) == '1\n2\n3\n4\n5', 'seq 1 5')
