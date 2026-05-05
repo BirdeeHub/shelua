@@ -269,8 +269,8 @@ You should provide the interpreter path via something like this to get the most 
 
 - An `sh` global will be added containing `require('sh')`
 
-- `drvArgs.passthru` will be written verbatim to the `drv` global variable in lua,
-	minus any nix functions, achieved via the `n2l` library mentioned above.
+- `drvArgs.passthru.info` will be written verbatim to the `drv` global variable in lua,
+	minus any nix functions, achieved via the `lib.generators.toLua`.
 	This will apply even if you add them later via `overrideAttrs`
 
 - `$out` for the derivation will have an associated `out` global in lua
