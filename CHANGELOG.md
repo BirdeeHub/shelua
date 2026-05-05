@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0](https://github.com/BirdeeHub/shelua/compare/v1.8.1...v1.9.0) (2026-05-05)
+
+
+### Features
+
+* **sh.env:** + runLuaCommand now only translates passthru.info + ci ([6af3ed4](https://github.com/BirdeeHub/shelua/commit/6af3ed45e1622049aa996f269ac875e52582de2d))
+* **sh.env:** + runLuaCommand now only translates passthru.info + ci ([a46b961](https://github.com/BirdeeHub/shelua/commit/a46b961f18a374eaa40bae4069832c869a206977))
+
 ## [1.8.1](https://github.com/BirdeeHub/shelua/compare/v1.8.0...v1.8.1) (2025-05-26)
 
 
