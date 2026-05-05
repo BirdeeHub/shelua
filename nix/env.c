@@ -42,7 +42,7 @@ static int env__index(lua_State *L) {
     return 1;
 }
 
-int luaopen_env(lua_State *L) {
+int luaopen_sh_env(lua_State *L) {
     lua_newtable(L); // module table
     lua_newtable(L); // metatable
     lua_pushcfunction(L, env__index);

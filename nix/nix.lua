@@ -2,7 +2,7 @@
 return function(outdir, tempdir, shell_hooks)
   _G.out = outdir
   _G.temp = tempdir
-  os.env = require("env")
+  os.env = require("sh.env")
   _G.sh = require("sh")
   local sh_settings = getmetatable(sh)
   string.escapeShellArg = sh_settings.repr.posix.escape

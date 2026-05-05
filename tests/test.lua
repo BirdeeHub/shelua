@@ -1,18 +1,3 @@
-local tests_passed = 0
-local tests_failed = 0
-require('gambiarra')(function(e, test, msg)
-	if e == 'pass' then
-		print("[32m✔[0m " .. test .. ': ' .. msg)
-		tests_passed = tests_passed + 1
-	elseif e == 'fail' then
-		print("[31m✘[0m " .. test .. ': ' .. msg)
-		tests_failed = tests_failed + 1
-	elseif e == 'except' then
-		print("[31m✘[0m " .. test .. ': ' .. msg)
-		tests_failed = tests_failed + 1
-	end
-end)
-
 local sh = require('sh')(function(s)
 	s.assert_zero = true
 	s.repr.test = {}
@@ -87,4 +72,11 @@ test('Check concat command results', function()
 	ok(tostring(r) == 'Goodbye WorldGoodbye Lua', 'concat commands with commands')
 end)
 
-if tests_failed > 0 then os.exit(1) end
+test.await(function(self)
+	self.report()
+	if (self.tests_failed or 0) > 0 then
+		os.exit(1)
+	else
+		os.exit(0)
+	end
+end)
