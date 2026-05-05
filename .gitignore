@@ -1,5 +1,7 @@
 **/result
+**/result-*
 **/repl-result-out
+**/repl-result-*
 **/.nvim.lua
 **/.cache
 **/compile_commands.json

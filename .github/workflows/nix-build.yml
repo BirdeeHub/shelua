@@ -1,11 +1,22 @@
-name: "Nix build"
+name: Tests
+
 on:
-  pull_request:
   push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 jobs:
-  checks:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v6
-    - uses: DeterminateSystems/nix-installer-action@v22
-    - run: nix flake check -Lv
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Run checks
+        run: nix flake check -Lvv --log-format bar-with-logs

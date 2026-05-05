@@ -1,25 +1,16 @@
 { lib
 , stdenv
-, n2l ? import (builtins.fetchGit (let
-    lock = (builtins.fromJSON (builtins.readFile ../flake.lock)).nodes.n2l.locked;
-  in {
-    url = "https://github.com/${lock.owner}/${lock.repo}.git";
-    rev = lock.rev;
-  }))
 , ...
 }: name: interpreter: env: text:
-stdenv.mkDerivation (finalAttrs: let
-  derivationArgs = if lib.isFunction env then env n2l else env;
-in {
-  enableParallelBuilding = true;
+stdenv.mkDerivation (finalAttrs: {
   inherit name;
   luaInterpreter = interpreter;
-  luaBuilder = if lib.isFunction text then text n2l else text;
-  luaBuilderData = lib.pipe (finalAttrs.passthru or {}) [
+  luaBuilder = text;
+  luaBuilderData = lib.pipe (finalAttrs.passthru.info or {}) [
     (lib.filterAttrsRecursive (n: v: ! lib.isFunction v))
-    (v: "return ${n2l.toLua v}")
+    (v: "return ${lib.generators.toLua { } v}")
   ];
-  passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (derivationArgs.passAsFile or [ ]);
+  passAsFile = [ "luaBuilder" "luaBuilderData" ] ++ (env.passAsFile or [ ]);
   buildCommand = /*bash*/ ''
     TEMPDIR=$(mktemp -d)
     mkdir -p "$TEMPDIR"
@@ -27,7 +18,7 @@ in {
     declare -f > "$STDENV_SHELL_HOOKS"
     envdir=$(mktemp -d)
     mkdir -p "$envdir"
-    $CC -O2 -fPIC -shared -o "$envdir/env.so" '${./env.c}' -I"$(dirname $luaInterpreter)/../include"
+    $CC -O2 -fPIC ${if stdenv.isDarwin then "-bundle -undefined dynamic_lookup" else "-shared"} -o "$envdir/sh.so" '${./env.c}' -I"$(dirname $luaInterpreter)/../include"
     echo "package.cpath = '$envdir/?.so;' .. package.cpath
     package.path = '${../lua}/?.lua;' .. package.path
     local ok, val = pcall(dofile, '${./nix.lua}')
@@ -36,13 +27,13 @@ in {
     assert(ok, val)
     " | "$luaInterpreter" -
   '';
-} // lib.optionalAttrs (!derivationArgs ? meta) {
+} // lib.optionalAttrs (!env ? meta) {
   pos =
     let
-      args = builtins.attrNames derivationArgs;
+      args = builtins.attrNames env;
     in
     if builtins.length args > 0 then
-      builtins.unsafeGetAttrPos (builtins.head args) derivationArgs
+      builtins.unsafeGetAttrPos (builtins.head args) env
     else
       null;
-} // (builtins.removeAttrs derivationArgs [ "passAsFile" ]))
+} // (removeAttrs env [ "passAsFile" "buildCommand" ]))

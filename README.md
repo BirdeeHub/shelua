@@ -29,6 +29,8 @@ It is useful when you have a short build or wrapper script that needs to deal wi
 
 Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
 
+Alongside all that, it also includes `require('sh.env')` which works like `vim.env`
+
 ## Install
 
 via luarocks: `luarocks install shelua`
@@ -247,23 +249,15 @@ inputs.shelua = {
 
 The library is exported by the flake under `inputs.shelua.packages.${system}` as `default`, `shelua5_1`, `shelua5_2`, `shelua5_3`, `shelua5_4`, and `sheluajit_2_1`.
 
-You may import any of them for any nixpkgs lua interpreter like this if you don't want to match them up.
-
-```nix
-luaEnv = pkgs.lua5_2.withPackages (ps: [(inputs.shelua.packages.${system}.default.override { luapkgs = ps; })]);
-```
-
 It also exports overlays. See the [flake](./flake.nix) for more details.
 
 ### In addition to the library:
 
 It exports a `inputs.shelua.legacyPackages.${system}.runLuaCommand` which is a lot like `pkgs.runCommand` except the command is in lua.
 
-`runLuaCommand :: str -> str -> attrs or (n2l -> attrs) -> str or (n2l -> str) -> drv`
+`runLuaCommand :: str -> str -> attrs -> str -> drv`
 
-where `n2l` is [this nix to lua library](https://github.com/BirdeeHub/nixToLua)
-
-and the rest representing:
+with those arguments representing:
 
 `runLuaCommand :: name -> lua_interpreter_path -> drvArgs -> lua_command -> drv`
 
@@ -291,10 +285,9 @@ You should provide the interpreter path via something like this to get the most 
 
 - `os.write_file(opts, filename, contents)` will be added where opts is `{ append = false, newline = true }` by default
 
-- `os.env` will be added. Setting values in the table will set the environment variable
+- `os.env` will be added as an alias for `require('sh.env')` Setting values in the table will set the environment variable
 	in the process environment, setting one to nil will unset it,
 	reading will return the environment variable's value.
-	Analogous to `vim.env` in neovim.
 
 - The path to the shell hooks will be added to the shelua library's metatable (via `sh.stdenv_shell_hooks_path = shell_hooks`), for use in redefining the existing transform which adds them if desired.
 
