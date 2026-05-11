@@ -19,5 +19,4 @@ dependencies = {
 
 build = {
    type = "builtin",
-   modules = { ["sh.env"] = "nix/env.c" }
 }
