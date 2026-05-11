@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.1](https://github.com/BirdeeHub/shelua/compare/v1.9.0...v1.9.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* **luarocks:** just offer the library ([8b8d031](https://github.com/BirdeeHub/shelua/commit/8b8d0313cceb7991a374c97417b6965f5bf6d77b))
+* **luarocks:** just offer the library ([9fe88b4](https://github.com/BirdeeHub/shelua/commit/9fe88b46912a7c6924d3f55f5f63e92eebae7e9f))
+
 ## [1.9.0](https://github.com/BirdeeHub/shelua/compare/v1.8.1...v1.9.0) (2026-05-05)
 
 
