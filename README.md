@@ -29,8 +29,6 @@ It is useful when you have a short build or wrapper script that needs to deal wi
 
 Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
 
-Alongside all that, it also includes `require('sh.env')` which works like `vim.env`
-
 ## Install
 
 via luarocks: `luarocks install shelua`
@@ -285,7 +283,7 @@ You should provide the interpreter path via something like this to get the most 
 
 - `os.write_file(opts, filename, contents)` will be added where opts is `{ append = false, newline = true }` by default
 
-- `os.env` will be added as an alias for `require('sh.env')` Setting values in the table will set the environment variable
+- `os.env` will be added to the environment. Setting values in the table will set the environment variable
 	in the process environment, setting one to nil will unset it,
 	reading will return the environment variable's value.
 

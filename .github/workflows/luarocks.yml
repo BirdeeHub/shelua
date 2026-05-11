@@ -27,7 +27,6 @@ jobs:
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
         with:
-          template: ".github/rockspec.template"
           version: ${{ env.LUAROCKS_VERSION }}
           detailed_description: |
             Tiny library with syntax sugar for shell scripting in Lua
