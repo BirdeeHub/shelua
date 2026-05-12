@@ -78,14 +78,14 @@ Its first return value will then be passed through any defined `transforms`.
 
 the result, in addition to its optional second return value will then be passed to one of the 2 following run functions based on current lua version.
 
-`post_5_2_run` and `pre_5_2_run` are what call the actual final shell command when needed.
+`run_cmd` is what calls the actual final shell command when needed.
 
-Their job is to run the command and report the result, exit and signal codes.
+Its job is to run the command and report the result, exit and signal codes.
 
-Prior to 5.2 the io.popen command does not return exit code or signal. You can decide to support older than 5.2 or not.
+Prior to 5.2 the `io.popen` command does not return exit code or signal. You can decide to support older than 5.2 or not.
 
 ```lua
-	---returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
+	---returns cmd and an optional item such as path to a tempfile to be passed to run_cmd
 	---called only when proper_pipes is false
 	---cmd is the result of add_args
 	---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
@@ -105,53 +105,50 @@ Prior to 5.2 the io.popen command does not return exit code or signal. You can d
 	end,
 	---runs the command and returns the result and exit code and signal
 	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
-	---@field post_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
-	post_5_2_run = function(opts, cmd, tmp)
-		local p = io.popen(cmd, 'r')
-		local output, exit, status
-		if p then
-			output = p:read('*a')
-			_, exit, status = p:close()
-		end
-		pcall(os.remove, tmp)
+	---@field run_cmd fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+	run_cmd = function(opts, cmd, tmp)
+		if is_5_2_plus then
+			local p = io.popen(cmd, 'r')
+			local output, _, exit, status
+			if p then
+				output = p:read('*a')
+				_, exit, status = p:close()
+			end
+			pcall(os.remove, tmp)
 
-		return {
-			__input = output,
-			__exitcode = exit == 'exit' and status or 127,
-			__signal = exit == 'signal' and status or 0,
-		}
-	end,
-	---runs the command and returns the result and exit code and signal
-	---Should return the flags using the same format as io.popen does in 5.2+
-	-- cmd is the result of single_stdin or concat_cmd, after being passed through any defined transforms
-	---@field pre_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
-	pre_5_2_run = function(opts, cmd, tmp)
-		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
-		local output
-		if p then
-			output = p:read('*a')
-			p:close()
+			return {
+				__input = output,
+				__exitcode = exit == 'exit' and status or 127,
+				__signal = exit == 'signal' and status or 0,
+			}
+		else
+			local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
+			local output
+			if p then
+				output = p:read('*a')
+				p:close()
+			end
+			pcall(os.remove, tmp)
+			local exit
+			output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
+				exit = tonumber(code)
+				return ""
+			end)
+			return {
+				__input = output,
+				__exitcode = exit or 127,
+				__signal = (exit and exit > 128) and (exit - 128) or 0
+			}
 		end
-		pcall(os.remove, tmp)
-		local exit
-		output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
-			exit = tonumber(code)
-			return ""
-		end)
-		return {
-			__input = output,
-			__exitcode = exit or 127,
-			__signal = (exit and exit > 128) and (exit - 128) or 0
-		}
 	end,
-	---if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
+	---if your run_cmd returns a table with extra keys, e.g. `__stderr`
 	---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 	---each string in this table must begin with '__' or it will be ignored
 	---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
 	extra_cmd_results = {},
 	---a list of functions to run in order on the command before running it.
 	---each one recieves the previous value and returns a new one.
-	---they are ran after concat_cmd or single_stdin and before the post_5_2_run and pre_5_2_run functions
+	---they are ran after concat_cmd or single_stdin and before the run_cmd functions
 	---@field transforms? (fun(cmd: string|any): string|any)[]
 	transforms = {},
 ```
@@ -172,7 +169,7 @@ which is the optional second return value of the call to `concat_cmd`
 Your goal in this function is to construct a string from the prior inputs,
 that pipes them into the command, and then return that string, if there are any prior inputs to pipe.
 
-Its result will be provided to the same run function as `single_stdin` would have, either `pre_5_2_run` or `post_5_2_run`,
+Its result will be provided to the same run function as `single_stdin` would have, `run_cmd`,
 after adding the newly resolved values to the command result being resolved.
 
 ```lua
@@ -192,7 +189,7 @@ after adding the newly resolved values to the command result being resolved.
 
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true
-	---may return an optional second value to be placed in another PipeInput, or returned to post_5_2_run or pre_5_2_run
+	---may return an optional second value to be placed in another PipeInput, or returned to run_cmd
 	-- cmd is the same type as the result of add_args
 	---@field concat_cmd fun(opts: Shelua.Opts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 	concat_cmd = function(opts, cmd, input)
