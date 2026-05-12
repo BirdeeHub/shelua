@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0](https://github.com/BirdeeHub/shelua/compare/v1.9.1...v1.10.0) (2026-05-12)
+
+
+### Features
+
+* **run_cmd:** post_5_2_run and pre_5_2_run deprecated for run_cmd ([52491a4](https://github.com/BirdeeHub/shelua/commit/52491a418ab1c07b3a0dbf7c71072580f932e06b))
+* **run_cmd:** post_5_2_run and pre_5_2_run deprecated for run_cmd ([3086bb0](https://github.com/BirdeeHub/shelua/commit/3086bb0cbc14a9f42084efadaf666acff9bccb47))
+
 ## [1.9.1](https://github.com/BirdeeHub/shelua/compare/v1.9.0...v1.9.1) (2026-05-11)
 
 
