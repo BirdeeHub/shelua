@@ -173,19 +173,24 @@ Its result will be provided to the same run function as `single_stdin` would hav
 after adding the newly resolved values to the command result being resolved.
 
 ```lua
-	---Will contain either `s`, a plain string,
-	---or `c`, an input command string
-	---@class Shelua.PipeInput
+	---@class Shelua.PipeInputStdin
 	---string stdin to combine
 	---@field s? string|any
 	---if string input came from a command,
 	---`e` will contain a table of all other command result fields
 	---such as `__exitcode`
 	---@field e? table
+
+	---@class Shelua.PipeInputClass
 	---cmd to combine
 	---@field c? string|any
 	---optional 2nd return of concat_cmd
 	---@field m? any
+
+	---Will contain either `s`, a plain string,
+	---or `c`, an input command string
+	---@alias Shelua.PipeInput Shelua.PipeInputStdin | Shelua.PipeInputClass
+
 
 	---strategy to combine piped inputs, 0, 1, or many, return resolved command to run
 	---called only when proper_pipes is true

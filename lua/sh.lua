@@ -1,5 +1,3 @@
----Will contain either `s`, a plain string,
----or `c`, an input command string
 ---@class Shelua.PipeInputStdin
 ---string stdin to combine
 ---@field s? string|any
@@ -14,6 +12,8 @@
 ---optional 2nd return of concat_cmd
 ---@field m? any
 
+---Will contain either `s`, a plain string,
+---or `c`, an input command string
 ---@alias Shelua.PipeInput Shelua.PipeInputStdin | Shelua.PipeInputClass
 
 ---@class Shelua.Repr
