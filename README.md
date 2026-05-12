@@ -3,7 +3,7 @@
 [![Lua][lua-shield]][lua-url]
 [![LuaRocks][luarocks-shield]][luarocks-url]
 
-Tiny library for shell scripting with Lua (inspired by zserge/luash).
+Tiny library for shell scripting with Lua (inspired by [zserge/luash](https://github.com/zserge/luash)).
 
 `luash` is interesting, but it modifies `_G` in an extreme way.
 
@@ -20,15 +20,6 @@ It works with any "posix-enough" shell by default such as `bash`, `zsh`, and `da
 
 But it will not work by default with `fish`, `nushell`, `cmd` or `powershell` unless you define a [representation](./REPR.md) for that shell.
 
-It also exports a [small nix helper](#in-addition-to-the-library) that allows you
-to use `shelua` to write `nix` derivations in `lua` instead of `bash`.
-
-It is `pkgs.runCommand` except it is `pkgs.runLuaCommand` because the command is in `lua`.
-
-It is useful when you have a short build or wrapper script that needs to deal with a lot of structured data.
-
-Especially when you have a lot of `json` and would rather use `cjson` and deal with tables than use `jq` and bash arrays
-
 ## Install
 
 via luarocks: `luarocks install shelua`
@@ -39,7 +30,7 @@ Or just clone this repo and copy `lua/sh.lua` into your project.
 
 ## Simple usage
 
-Every command that can be called via os.execute can be called via the sh table.
+Every command that can be called via `os.execute` can be called via the sh table.
 All the arguments passed into the function become command arguments.
 
 ``` lua
@@ -56,7 +47,7 @@ end
 ## Command input and pipelines
 
 If command argument is a table which has a `__input` field - it will be used as
-a command input (stdin). Multiple arguments with input are allowed, they will
+a command input (`stdin`). Multiple arguments with input are allowed, they will
 be concatenated.
 
 The each command function returns a structure that contains the `__input`
@@ -84,8 +75,8 @@ sh.ls '/bin' : grep "$filter" : wc '-l'
 ```
 
 Note that the commands are not running in parallel (because Lua can only handle
-one I/O loop at a time). So the inner-most command is executed, its output is
-read, the the outer command is execute with the output redirected etc.
+one `I/O` loop at a time). So the inner-most command is executed, its output is
+read, the outer command is execute with the output redirected etc.
 
 However, `shelua` also offers a `proper_pipes` [setting](#settings).
 
@@ -116,7 +107,7 @@ arguments without manually changing the arguments list.
 ## Partial commands and commands with tricky names or characters
 
 You can call `sh` with a string as the first argument to construct a command function, optionally
-pre-setting the arguments:
+presetting the arguments:
 
 ``` lua
 local sh = require('sh')

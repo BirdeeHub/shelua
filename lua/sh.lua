@@ -1,16 +1,20 @@
 ---Will contain either `s`, a plain string,
 ---or `c`, an input command string
----@class Shelua.PipeInput
+---@class Shelua.PipeInputStdin
 ---string stdin to combine
 ---@field s? string|any
 ---if string input came from a command,
 ---`e` will contain a table of all other command result fields
 ---such as `__exitcode`
 ---@field e? table
+
+---@class Shelua.PipeInputClass
 ---cmd to combine
 ---@field c? string|any
 ---optional 2nd return of concat_cmd
 ---@field m? any
+
+---@alias Shelua.PipeInput Shelua.PipeInputStdin | Shelua.PipeInputClass
 
 ---@class Shelua.Repr
 ---escapes a string for the shell
@@ -20,7 +24,7 @@
 ---@field arg_tbl fun(opts: Shelua.Opts, k: string, a: any): string|string[]?
 ---adds args to the command
 ---@field add_args fun(opts: Shelua.Opts, cmd: string, args: string[]): string|any
----returns cmd and an optional item such as path to a tempfile to be passed to post_5_2_run or pre_5_2_run
+---returns cmd and an optional item such as path to a tempfile to be passed to run_cmd
 ---called when proper_pipes is false
 ---cmd is the result of add_args
 ---codes is the list of codes that correspond with each input such as `__exitcode`, empty if none
@@ -30,13 +34,11 @@
 ---@field concat_cmd fun(opts: Shelua.Opts, cmd: string|any, input: Shelua.PipeInput[]): (string|any, any?)
 ---a list of functions to run in order on the command before running it.
 ---each one recieves the previous value and returns a new one.
----they are ran after concat_cmd or single_stdin and before the post_5_2_run and pre_5_2_run functions
+---they are ran after concat_cmd or single_stdin and before the run_cmd functions
 ---@field transforms? (fun(cmd: string|any): string|any)[]
 ---runs the command and returns the result and exit code and signal
----@field post_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
----runs the command and returns the result and exit code and signal
----@field pre_5_2_run fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
----if your pre_5_2_run or post_5_2_run returns a table with extra keys, e.g. `__stderr`
+---@field run_cmd fun(opts: Shelua.Opts, cmd: string|any, msg: any?): { __input: string, __exitcode: number, __signal: number }
+---if your run_cmd returns a table with extra keys, e.g. `__stderr`
 ---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 ---each string in this table must begin with '__' or it will be ignored
 ---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
@@ -134,10 +136,34 @@ local function tbl_get(t, default, ...)
 	return t or default
 end
 
+local warned_run_cmd_shim = false
+
 ---@param opts Shelua.Opts
 ---@param attr string
 ---@return function
 local get_repr_fn = function(opts, attr)
+	if attr == "run_cmd" then
+		local shell = opts.shell or "posix"
+		local shell_repr = tbl_get(opts, nil, "repr", shell)
+		if shell_repr and not shell_repr.run_cmd then
+			local old_post = shell_repr.post_5_2_run
+			local old_pre = shell_repr.pre_5_2_run
+			if old_post or old_pre then
+				if not warned_run_cmd_shim then
+					warned_run_cmd_shim = true
+					io.stderr:write("shelua: post_5_2_run/pre_5_2_run are deprecated. ")
+					io.stderr:write("Use run_cmd(opts, cmd, msg) instead.\n")
+				end
+				shell_repr.run_cmd = function(o, cmd, msg)
+					if is_5_2_plus and old_post then
+						return old_post(o, cmd, msg)
+					else
+						return (old_pre or old_post)(o, cmd, msg)
+					end
+				end
+			end
+		end
+	end
 	return tbl_get(opts, tbl_get(opts, function()
 		error("Shelua Repr Error: " ..
 			tostring(attr) .. " function required for shell: " .. tostring(opts.shell or "posix"))
@@ -222,39 +248,40 @@ local posix = {
 			return cmd
 		end
 	end,
-	post_5_2_run = function(opts, cmd, tmp)
-		local p = io.popen(cmd, 'r')
-		local output, _, exit, status
-		if p then
-			output = p:read('*a')
-			_, exit, status = p:close()
-		end
-		pcall(os.remove, tmp)
+	run_cmd = function(opts, cmd, tmp)
+		if is_5_2_plus then
+			local p = io.popen(cmd, 'r')
+			local output, _, exit, status
+			if p then
+				output = p:read('*a')
+				_, exit, status = p:close()
+			end
+			pcall(os.remove, tmp)
 
-		return {
-			__input = output,
-			__exitcode = exit == 'exit' and status or 127,
-			__signal = exit == 'signal' and status or 0,
-		}
-	end,
-	pre_5_2_run = function(opts, cmd, tmp)
-		local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
-		local output
-		if p then
-			output = p:read('*a')
-			p:close()
+			return {
+				__input = output,
+				__exitcode = exit == 'exit' and status or 127,
+				__signal = exit == 'signal' and status or 0,
+			}
+		else
+			local p = io.popen(cmd .. "\necho __EXITCODE__$?", 'r')
+			local output
+			if p then
+				output = p:read('*a')
+				p:close()
+			end
+			pcall(os.remove, tmp)
+			local exit
+			output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
+				exit = tonumber(code)
+				return ""
+			end)
+			return {
+				__input = output,
+				__exitcode = exit or 127,
+				__signal = (exit and exit > 128) and (exit - 128) or 0
+			}
 		end
-		pcall(os.remove, tmp)
-		local exit
-		output = (output or ""):gsub("__EXITCODE__(%d*)\r?\n?$", function(code)
-			exit = tonumber(code)
-			return ""
-		end)
-		return {
-			__input = output,
-			__exitcode = exit or 127,
-			__signal = (exit and exit > 128) and (exit - 128) or 0
-		}
 	end,
 	extra_cmd_results = {},
 	transforms = {},
@@ -362,21 +389,14 @@ local cmd_mt = {
 		end
 		if check_if_cmd_result(opts, c) then
 			local apply = function(com)
-				local transforms = opts.transforms
-				if transforms then print("Shelua Deprecation: transforms option moved to be a repr-specific option") end
-				transforms = tbl_get(opts, transforms or {}, "repr", opts.shell or "posix", "transforms")
+				local transforms = tbl_get(opts, {}, "repr", opts.shell or "posix", "transforms")
 				for _, f in ipairs(transforms) do
 					com = f(com)
 				end
 				return com
 			end
 			local cmd, msg = resolve(self, opts)
-			local res
-			if is_5_2_plus then
-				res = get_repr_fn(opts, "post_5_2_run")(opts, apply(cmd), msg)
-			else
-				res = get_repr_fn(opts, "pre_5_2_run")(opts, apply(cmd), msg)
-			end
+			local res = get_repr_fn(opts, "run_cmd")(opts, apply(cmd), msg)
 			for k, v in pairs(res or {}) do
 				rawset(self, k, v)
 			end
@@ -494,25 +514,16 @@ command = function(self, cmdstr, ...)
 			unresolved[t] = { cmd = cmd, unres = unres, input = input, codes = codes }
 		else
 			local apply = function(com)
-				local transforms = shmt.transforms
-				if transforms then print("Shelua Deprecation: transforms option moved to be a repr-specific option") end
-				transforms = tbl_get(shmt, transforms or {}, "repr", shmt.shell or "posix", "transforms")
+				local transforms = tbl_get(shmt, {}, "repr", shmt.shell or "posix", "transforms")
 				for _, f in ipairs(transforms) do
 					com = f(com)
 				end
 				return com
 			end
-			if is_5_2_plus then
-				local msg
-				cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
-					#codes > 0 and codes or nil)
-				t = get_repr_fn(shmt, "post_5_2_run")(shmt, apply(cmd), msg)
-			else
-				local msg
-				cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
-					#codes > 0 and codes or nil)
-				t = get_repr_fn(shmt, "pre_5_2_run")(shmt, apply(cmd), msg)
-			end
+			local msg
+			cmd, msg = get_repr_fn(shmt, "single_stdin")(shmt, cmd, #input > 0 and input or nil,
+				#codes > 0 and codes or nil)
+			t = get_repr_fn(shmt, "run_cmd")(shmt, apply(cmd), msg)
 			if shmt.assert_zero and t.__exitcode ~= 0 then
 				error("Command " .. tostring(cmd) .. " exited with non-zero status: " .. tostring(t.__exitcode))
 			end
