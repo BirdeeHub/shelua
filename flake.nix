@@ -35,9 +35,11 @@
       # lua5_1 = prev.lua5_1.override { packageOverrides };
       l_pkg_main = builtins.mapAttrs (
         n: _: (prev.lib.attrByPath [ n "override" ] null prev) (old: {
-          packageOverrides = luaself: luaprev: (if old ? packageOverrides then old.packageOverrides luaself luaprev else {}) // {
-            ${APPNAME} = luaself.callPackage luaCallPackageFn {};
-          };
+          packageOverrides = luaself: luaprev: (
+            (if old ? packageOverrides then old.packageOverrides luaself luaprev else {}) // {
+              ${APPNAME} = luaself.callPackage luaCallPackageFn {};
+            }
+          );
         })
       ) l_pkg_enum;
       # lua51Packages = final.lua5_1.pkgs;
