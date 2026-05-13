@@ -34,11 +34,11 @@
         };
       # lua5_1 = prev.lua5_1.override { packageOverrides };
       l_pkg_main = builtins.mapAttrs (
-        n: _: (prev.lib.attrByPath [ n "override" ] null prev) {
-          packageOverrides = luaself: luaprev: {
+        n: _: (prev.lib.attrByPath [ n "override" ] null prev) (old: {
+          packageOverrides = luaself: luaprev: (if old ? packageOverrides then old.packageOverrides luaself luaprev else {}) // {
             ${APPNAME} = luaself.callPackage luaCallPackageFn {};
           };
-        }
+        })
       ) l_pkg_enum;
       # lua51Packages = final.lua5_1.pkgs;
       l_pkg_sets = builtins.listToAttrs (
@@ -51,12 +51,7 @@
       );
     in l_pkg_main // l_pkg_sets // {
       vimPlugins = prev.vimPlugins // {
-        ${APPNAME} = (final.neovimUtils.buildNeovimPlugin { pname = APPNAME; }).overrideAttrs {
-          luarocksConfig = {
-            lua_modules_path = "lua";
-            lib_modules_path = "lua";
-          };
-        };
+        ${APPNAME} = final.neovimUtils.buildNeovimPlugin { pname = APPNAME; };
       };
     };
     packages = forAllSys (system: let
