@@ -20,6 +20,8 @@ It works with any "posix-enough" shell by default such as `bash`, `zsh`, and `da
 
 But it will not work by default with `fish`, `nushell`, `cmd` or `powershell` unless you define a [representation](./REPR.md) for that shell.
 
+Pairs well with [osenv](https://github.com/BirdeeHub/lua-osenv)!
+
 ## Install
 
 via luarocks: `luarocks install shelua`
