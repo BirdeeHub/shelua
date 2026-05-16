@@ -223,10 +223,16 @@ sh.repr = { newshell = { ... } }
 ```
 This would overwrite the entire `repr` table, erasing any already there.
 
-You may prefix the setting name with `_x_` to deep extend the tables together instead.
+There are 2 other methods designed for more easily setting nested values.
 ```lua
 local sh = require('sh')
-sh._x_repr = { newshell = { ... } }
+sh.proper_pipes = true
+-- setting a top level value like this will perform a key-based deep merge
+sh[{"repr"}] = { posix = { transforms = { function(v) print(v) return v end } } }
+-- or provide a list of names to directly set a nested value! (does not merge)
+sh[{"repr", "posix", "transforms"}] = { function(v) print(v) return v end }
+-- The above examples add a print to the posix repr without overwriting the other representation functions
+-- (so you can see what the final command looks like!)
 ```
 
 ## For nix users
