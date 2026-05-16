@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.0](https://github.com/BirdeeHub/shelua/compare/v1.10.0...v1.11.0) (2026-05-16)
+
+
+### Features
+
+* **nested settings:** better handling for setting nested settings ([e825a55](https://github.com/BirdeeHub/shelua/commit/e825a55619dc2cd8eb5bbb6a6d8dffcd95bc697c))
+* **nested settings:** better handling for setting nested settings ([36f887f](https://github.com/BirdeeHub/shelua/commit/36f887f48639c5b918b6343059b1b1ab861ba709))
+
 ## [1.10.0](https://github.com/BirdeeHub/shelua/compare/v1.9.1...v1.10.0) (2026-05-12)
 
 
