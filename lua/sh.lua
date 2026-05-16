@@ -136,6 +136,21 @@ local function tbl_get(t, default, ...)
 	return t or default
 end
 
+---@param t table
+---@param value any
+local function setNested(t, value, ...)
+	local keys = {...}
+	local cur = t
+	for i = 1, #keys - 1 do
+		local k = keys[i]
+		if type(cur[k]) ~= "table" then
+			cur[k] = {}
+		end
+		cur = cur[k]
+	end
+	cur[keys[#keys]] = value
+end
+
 local warned_run_cmd_shim = false
 
 ---@param opts Shelua.Opts
@@ -419,6 +434,7 @@ local cmd_mt = {
 	end,
 }
 
+local has_warned_about_x_ = false
 local MT = {
 	---@type Shelua.Opts
 	__metatable = {
@@ -441,13 +457,27 @@ local MT = {
 	-- change settings by assigning them to table
 	__newindex = function(self, key, value)
 		if type(key) == "string" and key:sub(1, 3) == "_x_" then
-			local fkey = key:sub(4)
-			local opts = getmetatable(self)
-			if type(rawget(opts, fkey)) ~= "table" then
-				opts[fkey] = value
-			else
-				recUpdate(opts[fkey], value)
+			if not has_warned_about_x_ then
+				io.stderr:write("shelua: Using `sh._x_name = { nested = { settings = { to_be = \"merged\" } } }` to deep extend settings has been deprecated.\n")
+				io.stderr:write("Use `sh[{\"name\"}] = { nested = { settings = { to_be = \"merged\" } } }` instead.\n")
 			end
+			key = key:sub(4)
+			local opts = getmetatable(self)
+			if type(rawget(opts, key)) ~= "table" then
+				opts[key] = value
+			else
+				recUpdate(opts[key], value)
+			end
+		elseif type(key) == "table" and key[1] and #key == 1 then
+			key = key[1]
+			local opts = getmetatable(self)
+			if type(rawget(opts, key)) ~= "table" then
+				opts[key] = value
+			else
+				recUpdate(opts[key], value)
+			end
+		elseif type(key) == "table" and #key > 1 then
+			setNested(getmetatable(self), value, (unpack or table.unpack)(key))
 		else
 			getmetatable(self)[key] = value
 		end

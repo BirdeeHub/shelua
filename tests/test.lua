@@ -65,6 +65,42 @@ test('Check command with table args', function()
 	local r = sh.stat('/bin', { format = '%a %n' })
 	ok(tostring(r) == '755 /bin', 'stat --format "%a %n" /bin')
 end)
+test('Check settings deep merge via sh[{"key"}]', function()
+    local s = sh()
+    s[{"repr"}] = { posix = { foo = "bar" } }
+    local opts = getmetatable(s)
+    ok(opts.repr.posix.foo == "bar", "merge adds new nested key")
+    ok(opts.repr.posix.escape ~= nil, "merge preserves existing keys")
+end)
+
+test('Check settings nested set via multi-key table', function()
+    local s = sh()
+    s[{"repr", "posix", "foo"}] = "bar"
+    local opts = getmetatable(s)
+    ok(opts.repr.posix.foo == "bar", "nested set via multi-key table")
+end)
+
+test('Check table key merge preserves keys set via nested set', function()
+    local s = sh()
+    s[{"repr", "posix", "foo"}] = "bar"
+    s[{"repr"}] = { posix = { bar = "baz" } }
+    local opts = getmetatable(s)
+    ok(opts.repr.posix.foo == "bar", "merge preserves keys set via nested set")
+    ok(opts.repr.posix.bar == "baz", "merge adds new keys")
+end)
+
+test('Check sh[{"key"}] overwrites non-table settings', function()
+    local s = sh()
+    s[{"escape_args"}] = true
+    ok(getmetatable(s).escape_args == true, "sh[{key}] with non-table value overwrites")
+end)
+
+test('Check normal setting still works', function()
+    local s = sh()
+    s.escape_args = true
+    ok(getmetatable(s).escape_args == true, "direct setting works")
+end)
+
 test('Check concat command results', function()
 	local r = sh.echo 'Hello World' :sed("s/Hello/Goodbye/g") .. " " .. sh.echo 'Hello Lua' :sed "s/Hello/Goodbye/g"
 	ok(tostring(r) == 'Goodbye World Goodbye Lua', 'concat commands with string')
