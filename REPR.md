@@ -76,7 +76,7 @@ local posix = {
 
 Its first return value will then be passed through any defined `transforms`.
 
-the result, in addition to its optional second return value will then be passed to one of the 2 following run functions based on current lua version.
+The result, in addition to its optional second return value will then be passed to `run_cmd`.
 
 `run_cmd` is what calls the actual final shell command when needed.
 
