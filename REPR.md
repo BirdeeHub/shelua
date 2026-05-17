@@ -76,7 +76,7 @@ local posix = {
 
 Its first return value will then be passed through any defined `transforms`.
 
-The result, in addition to its optional second return value will then be passed to `run_cmd`.
+The result, in addition to its optional second return value, will then be passed to `run_cmd`.
 
 `run_cmd` is what calls the actual final shell command when needed.
 
