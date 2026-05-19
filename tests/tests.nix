@@ -1,4 +1,4 @@
-pkgs: let
+pkgs: l_pkg_enum: let
   mkBuildTest = lua: let
     luapath = (lua.withPackages (ps: with ps; [ inspect shelua ])).interpreter;
   in pkgs.runCommand ("shelua_package_test-" + lua.luaAttr) {} ''
@@ -37,7 +37,7 @@ pkgs: let
       require("example")
       require("test")
     '';
-  run_on = with pkgs; [ lua5_1 lua5_2 lua5_3 lua5_4 lua5_5 luajit ];
+  run_on = map (n: pkgs.${n}) l_pkg_enum;
 in pkgs.lib.pipe run_on [
   (map (li: { name = "runLuaCommand-" + li.luaAttr; value = mkCmdTest li; }))
   builtins.listToAttrs

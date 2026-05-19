@@ -14,56 +14,50 @@
         overlays = (if builtins.isList overlays then overlays else []) ++ inputs.pkgs.overlays or [];
         config = inputs.pkgs.config or {};
       };
-    mapAttrsToList = f: attrs: builtins.attrValues (builtins.mapAttrs f attrs);
-    l_pkg_enum = {
-      lua5_1 = "lua51Packages";
-      lua5_2 = "lua52Packages";
-      lua5_3 = "lua53Packages";
-      lua5_4 = "lua54Packages";
-      lua5_5 = "lua55Packages";
-      luajit = "luajitPackages";
-      lua = "luaPackages";
-    };
     APPNAME = "shelua";
-    overlay = final: prev: let
-      luaCallPackageFn = { buildLuarocksPackage, }:
-        buildLuarocksPackage {
-          pname = APPNAME;
-          version = "scm-1";
-          src = self;
-        };
-      # lua5_1 = prev.lua5_1.override { packageOverrides };
-      l_pkg_main = builtins.mapAttrs (
-        n: _: (prev.lib.attrByPath [ n "override" ] null prev) (old: {
-          packageOverrides = luaself: luaprev: (
-            (if old ? packageOverrides then old.packageOverrides luaself luaprev else {}) // {
-              ${APPNAME} = luaself.callPackage luaCallPackageFn {};
-            }
-          );
-        })
-      ) l_pkg_enum;
-      # lua51Packages = final.lua5_1.pkgs;
-      l_pkg_sets = builtins.listToAttrs (
-        mapAttrsToList (
-          n: v: {
-            name = v;
-            value = prev.lib.attrByPath [ n "pkgs" ] null final;
+    l_pkg_enum = [ "lua5_1" "lua5_2" "lua5_3" "lua5_4" "lua5_5" "luajit" "lua" ];
+    mkLuaOverlay = { packageOverrides, vimPlugins ? null, versions ? [], controlType ? "exclude", ... }:
+      assert builtins.isList versions || throw "lua versions must be a list of strings containing `lua.luaAttr` names corresponding to `pkgs.luaInterpreters`!";
+      assert controlType == "build" || controlType == "exclude" || throw ''controlType must be "build" or "exclude"'';
+    final: prev: {
+      luaInterpreters = prev.luaInterpreters // prev.lib.pipe (
+        if controlType == "build" then
+          prev.lib.intersectLists versions (builtins.attrNames prev.luaInterpreters)
+        else
+          builtins.filter (x: !builtins.elem x versions) (builtins.attrNames prev.luaInterpreters)
+      ) [
+        (map (v: prev.lib.nameValuePair v packageOverrides))
+        builtins.listToAttrs
+        (builtins.mapAttrs (
+          n: new: prev.luaInterpreters.${n}.override (old: {
+            packageOverrides = prev.lib.composeExtensions (old.packageOverrides or (_: _: {})) new;
+          })
+        ))
+      ];
+      ${if prev.lib.isFunction vimPlugins then "vimPlugins" else null} = prev.vimPlugins // vimPlugins final prev;
+    };
+    overlay = mkLuaOverlay {
+      packageOverrides = luaself: luaprev: {
+        ${APPNAME} = luaself.callPackage (
+          { buildLuarocksPackage, }: buildLuarocksPackage {
+            pname = APPNAME;
+            version = "scm-1";
+            src = self;
           }
-        ) l_pkg_enum
-      );
-    in l_pkg_main // l_pkg_sets // {
-      vimPlugins = prev.vimPlugins // {
+        ) {};
+      };
+      vimPlugins = final: prev: {
         ${APPNAME} = final.neovimUtils.buildNeovimPlugin { pname = APPNAME; };
       };
     };
     packages = forAllSys (system: let
       pkgs = getPkgs system [ overlay ];
     in (
-      with builtins; listToAttrs (
+      builtins.listToAttrs (
         map (n: {
           name = "she${n}";
           value = pkgs.lib.attrByPath [ n "pkgs" APPNAME ] null pkgs;
-        }) (attrNames l_pkg_enum)
+        }) l_pkg_enum
       )
     ) // {
       default = pkgs.vimPlugins.${APPNAME};
@@ -75,7 +69,7 @@
     overlays.runLuaCommand = runLuaCommandOverlay;
     legacyPackages = forAllSys (system: { inherit (getPkgs system [ runLuaCommandOverlay ]) runLuaCommand; });
     inherit packages;
-    checks = forAllSys (system: import ./tests/tests.nix (getPkgs system [ overlay runLuaCommandOverlay ]));
+    checks = forAllSys (system: import ./tests/tests.nix (getPkgs system [ overlay runLuaCommandOverlay ]) l_pkg_enum);
     devShells = forAllSys (system: let
       pkgs = getPkgs system [];
       lua = pkgs.luajit.withPackages (lp: [ lp.inspect lp.cjson lp.toml-edit lp.luarocks ]);
@@ -87,7 +81,15 @@
         LUA = lua.interpreter;
         BEAR = "${pkgs.bear}/bin/bear";
         shellHook = ''
-          [ "$(whoami)" == "birdee" ] && exec zsh
+          ogdir=$(pwd)
+          gitdir="$(git rev-parse --show-toplevel)"
+          if [ -n "$gitdir" ]; then
+            export PREFIX="$gitdir/build/test"
+            cd "$gitdir"
+            make bear
+            cd "$ogdir"
+          fi
+          unset gitdir ogdir
         '';
       };
     });
