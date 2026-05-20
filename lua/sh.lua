@@ -42,6 +42,10 @@
 ---proper_pipes will need to know that accessing them should be a trigger to resolve the pipe.
 ---each string in this table must begin with '__' or it will be ignored
 ---@field extra_cmd_results string[]|fun(opts: Shelua.Opts): string[]
+---override top-level proper_pipes setting for this representation
+---@field proper_pipes? boolean
+---override top-level escape_args setting for this representation
+---@field escape_args? boolean
 
 ---@class Shelua.OptsClass
 ---proper pipes at the cost of access to mid pipe values after further calls have been chained from it.
@@ -185,6 +189,18 @@ local get_repr_fn = function(opts, attr)
 	end, "repr", "posix", attr), "repr", opts.shell or "posix", attr)
 end
 
+local function repr_proper_pipes(opts)
+	local val = tbl_get(opts, nil, "repr", opts.shell or "posix", "proper_pipes")
+	if val ~= nil then return val end
+	return opts.proper_pipes
+end
+
+local function repr_escape_args(opts)
+	local val = tbl_get(opts, nil, "repr", opts.shell or "posix", "escape_args")
+	if val ~= nil then return val end
+	return opts.escape_args
+end
+
 local function cmd_result_names(opts)
 	local names = { "__input", "__exitcode", "__signal" }
 	local xtra = tbl_get(opts, {}, "repr", opts.shell or "posix", "extra_cmd_results")
@@ -316,7 +332,7 @@ local function flatten(input, opts)
 			keys[k] = true
 			local v = t[k]
 			if type(v) == 'table' then
-				if unresolved[v] and opts.proper_pipes then
+				if unresolved[v] and repr_proper_pipes(opts) then
 					table.insert(result.unres, v)
 					table.insert(result.codes, false)
 					table.insert(result.res, false)
@@ -324,7 +340,7 @@ local function flatten(input, opts)
 					f(v)
 				end
 			else
-				table.insert(result.args, opts.escape_args and get_repr_fn(opts, "escape")(v, opts) or v)
+				table.insert(result.args, repr_escape_args(opts) and get_repr_fn(opts, "escape")(v, opts) or v)
 			end
 		end
 		local codes = {}
@@ -336,7 +352,7 @@ local function flatten(input, opts)
 			if v ~= nil then
 				if k == '__input' then
 					table.insert(result.res, v)
-					if opts.proper_pipes then
+					if repr_proper_pipes(opts) then
 						table.insert(result.unres, false)
 					end
 					to_add = true
@@ -399,7 +415,7 @@ local command
 local cmd_mt = {
 	__index = function(self, c)
 		local opts = getmetatable(self)
-		if not opts.proper_pipes then
+		if not repr_proper_pipes(opts) then
 			return command(self, c)
 		end
 		if check_if_cmd_result(opts, c) then
@@ -528,19 +544,19 @@ command = function(self, cmdstr, ...)
 		for k, v in ipairs(preargs.res) do
 			table.insert(input, v)
 			table.insert(codes, preargs.codes[k])
-			if shmt.proper_pipes then
+			if repr_proper_pipes(shmt) then
 				table.insert(unres, preargs.unres[k])
 			end
 		end
 		for k, v in ipairs(args.res) do
 			table.insert(input, v)
 			table.insert(codes, args.codes[k])
-			if shmt.proper_pipes then
+			if repr_proper_pipes(shmt) then
 				table.insert(unres, args.unres[k])
 			end
 		end
 		local t = {}
-		if shmt.proper_pipes then
+		if repr_proper_pipes(shmt) then
 			unresolved[t] = { cmd = cmd, unres = unres, input = input, codes = codes }
 		else
 			local apply = function(com)
