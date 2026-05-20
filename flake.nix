@@ -80,17 +80,6 @@
         LUA_INCDIR = "${lua}/include";
         LUA = lua.interpreter;
         BEAR = "${pkgs.bear}/bin/bear";
-        shellHook = ''
-          ogdir=$(pwd)
-          gitdir="$(git rev-parse --show-toplevel)"
-          if [ -n "$gitdir" ]; then
-            export PREFIX="$gitdir/build/test"
-            cd "$gitdir"
-            make bear
-            cd "$ogdir"
-          fi
-          unset gitdir ogdir
-        '';
       };
     });
   };

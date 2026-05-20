@@ -34,11 +34,19 @@ local utils_json = tostring(sh.nixdoc {
 	- If you wish to make your `add_args` return something that is not a string, your other representation functions and any defined `transforms` must be able to handle that.
 	- In addition, if you wish to make your `add_args` return something that is not a string, you should define `__tostring` in its metatable to preserve useful error messages.
 
-Our first 3 `Shelua.Repr` methods for `posix`: `arg_tbl`, `escape`, and `add_args`
+Our first 3 `Shelua.Repr` methods for `posix`: `arg_tbl`, `escape`, and `add_args`, plus 2 extra override properties `proper_pipes` and `escape_args`
 
 ```lua
 ---@type Shelua.Repr
 local posix = {
+	---Override top-level proper_pipes setting for this representation.
+	---Set with true or false, or use nil to fall back to top-level setting.
+	---@field proper_pipes? boolean
+	proper_pipes = nil,
+	---Override top-level escape_args setting for this representation.
+	---Set with true or false, or use nil to fall back to top-level setting.
+	---@field escape_args? boolean
+	escape_args = nil,
 	-- converts key and it's argument to "-k" or "-k=v" or "--key=v" or nil to ignore
 	-- turns table form args from table keys and values into flags
 	-- if returning a list, items will be added to args list in order
