@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.0](https://github.com/BirdeeHub/shelua/compare/v1.11.0...v1.12.0) (2026-05-20)
+
+
+### Features
+
+* **repr.overrides:** allow reprs to choose if they support certain behaviors ([9364b90](https://github.com/BirdeeHub/shelua/commit/9364b9046ad842624c473774b452578adbcd8b18))
+* **repr.overrides:** allow reprs to choose if they support certain behaviors ([024e1d0](https://github.com/BirdeeHub/shelua/commit/024e1d05e9c14556166b1299152b95c8975bee43))
+
 ## [1.11.0](https://github.com/BirdeeHub/shelua/compare/v1.10.0...v1.11.0) (2026-05-16)
 
 
