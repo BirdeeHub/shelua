@@ -72,7 +72,7 @@
     checks = forAllSys (system: import ./tests/tests.nix (getPkgs system [ overlay runLuaCommandOverlay ]) l_pkg_enum);
     devShells = forAllSys (system: let
       pkgs = getPkgs system [];
-      lua = pkgs.luajit.withPackages (lp: [ lp.inspect lp.cjson lp.toml-edit lp.luarocks ]);
+      lua = pkgs.luajit.withPackages (lp: [ lp.inspect lp.luarocks ]);
     in {
       default = pkgs.mkShell {
         name = "${APPNAME}-dev";
